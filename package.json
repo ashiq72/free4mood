@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "ashiq-currency": "^1.0.0",
     "next": "16.0.3",
     "postcss": "^8.5.6",
     "react": "19.2.0",
