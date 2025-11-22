@@ -40,7 +40,7 @@ export default function Navber() {
   ];
 
   const userMenuItems = [
-    { name: "Your Profile", href: "#" },
+    { name: "Your Profile", href: "/profile" },
     { name: "Account Settings", href: "#" },
     { name: "Billing", href: "#" },
     { name: "Team Settings", href: "#" },
