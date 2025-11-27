@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 
 export default function Navber() {
@@ -53,9 +54,12 @@ export default function Navber() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-8">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              <Link
+                href="/"
+                className="text-xl font-bold text-gray-900 dark:text-white"
+              >
                 Free4Mood
-              </h2>
+              </Link>
 
               {/* <div className="hidden md:flex items-center space-x-8">
                 <a
