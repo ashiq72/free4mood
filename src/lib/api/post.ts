@@ -1,9 +1,12 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://base360.vercel.app/api/v1/";
+const BASE_URL = "https://base360.vercel.app/api/v1/";
 
-export const createPost = async (postData: any) => {
+interface PostData {
+  [key: string]: unknown;
+}
+
+export const createPost = async (postData: PostData) => {
   try {
-    const response = await fetch(`${BASE_URL}/posts`, {
+    const response = await fetch(`http://localhost:4000/api/v1/posts/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -17,6 +20,6 @@ export const createPost = async (postData: any) => {
 };
 
 export const getPosts = async () => {
-  const response = await fetch(`${BASE_URL}/posts`);
+  const response = await fetch(`http://localhost:4000/api/v1/posts/`);
   return response.json();
 };
