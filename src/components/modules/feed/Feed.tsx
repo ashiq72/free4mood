@@ -1,11 +1,34 @@
-// "use client";
-// import { useEffect, useState } from "react";
+"use client";
+import { useEffect, useState } from "react";
 import { getAllPosts } from "@/lib/api/post";
 import { PostCard } from "./PostCard";
 
-export const Feed = async () => {
-  const res = await getAllPosts();
-  const posts = res.data;
+interface IPost {
+  title: string;
+  description: string;
+  image?: string;
+}
+
+export const Feed = () => {
+  const [posts, setPosts] = useState<IPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        const res = await getAllPosts();
+        setPosts(res.data);
+      } catch (error) {
+        console.error("Failed to load posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPosts();
+  }, []);
+
+  if (loading) return <p>Loading posts...</p>;
   return (
     <div className="space-y-6 pb-10">
       {posts.map((post: any) => (
