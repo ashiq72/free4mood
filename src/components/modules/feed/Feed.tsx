@@ -5,31 +5,7 @@ import { PostCard } from "./PostCard";
 
 export const Feed = async () => {
   const res = await getAllPosts();
-  // const [posts, setPosts] = useState<any[]>([]);
-  const posts = res.data; // 👉 এখানে array আছে
-
-  // useEffect(() => {
-  //   let mounted = true;
-
-  //   const fetchPosts = async () => {
-  //     try {
-  //       const res = await fetch("http://localhost:4000/api/v1/posts/");
-  //       if (!res.ok) return;
-  //       const data = await res.json();
-  //       if (mounted) setPosts(data.data); // তোমার API অনুযায়ী adjust করবে
-  //     } catch (err) {
-  //       console.error("Failed to fetch posts:", err);
-  //     }
-  //   };
-
-  //   // call asynchronously to avoid synchronous setState in effect body
-  //   fetchPosts();
-
-  //   return () => {
-  //     mounted = false;
-  //   };
-  // }, []);
-
+  const posts = res.data;
   return (
     <div className="space-y-6 pb-10">
       {posts.map((post: any) => (

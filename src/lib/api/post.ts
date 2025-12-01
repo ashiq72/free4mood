@@ -1,4 +1,4 @@
-const BASE_URL = "https://base360.vercel.app/api/v1/";
+// const BASE_URL = "https://base360.vercel.app/api/v1/";
 
 interface PostData {
   [key: string]: unknown;
