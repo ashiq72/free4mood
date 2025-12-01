@@ -1,35 +1,34 @@
-// "use client";
-// import { useEffect, useState } from "react";
+"use client";
+import { useEffect, useState } from "react";
 import { getAllPosts } from "@/lib/api/post";
 import { PostCard } from "./PostCard";
 
-export const Feed = async () => {
-  const res = await getAllPosts();
-  // const [posts, setPosts] = useState<any[]>([]);
-  const posts = res.data; // 👉 এখানে array আছে
+interface IPost {
+  title: string;
+  description: string;
+  image?: string;
+}
 
-  // useEffect(() => {
-  //   let mounted = true;
+export const Feed = () => {
+  const [posts, setPosts] = useState<IPost[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  //   const fetchPosts = async () => {
-  //     try {
-  //       const res = await fetch("http://localhost:4000/api/v1/posts/");
-  //       if (!res.ok) return;
-  //       const data = await res.json();
-  //       if (mounted) setPosts(data.data); // তোমার API অনুযায়ী adjust করবে
-  //     } catch (err) {
-  //       console.error("Failed to fetch posts:", err);
-  //     }
-  //   };
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        const res = await getAllPosts();
+        setPosts(res.data);
+      } catch (error) {
+        console.error("Failed to load posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //   // call asynchronously to avoid synchronous setState in effect body
-  //   fetchPosts();
+    loadPosts();
+  }, []);
 
-  //   return () => {
-  //     mounted = false;
-  //   };
-  // }, []);
-
+  if (loading) return <p>Loading posts...</p>;
   return (
     <div className="space-y-6 pb-10">
       {posts.map((post: any) => (

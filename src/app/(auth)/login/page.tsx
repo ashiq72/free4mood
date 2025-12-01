@@ -1,9 +1,11 @@
 "use client";
+import { loginUser } from "@/lib/api/auth/auth";
 import Link from "next/link";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 interface IFormInput {
-  identifier: string; // phone or email
+  phone: string;
   password: string;
 }
 
@@ -14,27 +16,33 @@ export default function Login() {
     formState: { errors },
   } = useForm<IFormInput>();
 
-  const onSubmit: SubmitHandler<IFormInput> = (data) => {
-    const identifier = data.identifier.trim();
+  const router = useRouter();
+  const onSubmit: SubmitHandler<IFormInput> = async (data) => {
+    const phone = data.phone.trim();
 
-    // Detect if it's an email
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    const isPhone = /^01[0-9]{9}$/.test(phone);
 
-    // Detect if it's BD phone number (11 digits)
-    const isPhone = /^01[0-9]{9}$/.test(identifier);
-
-    if (!isEmail && !isPhone) {
-      console.log("Invalid email or phone!");
+    if (!isPhone) {
+      alert("Invalid phone number!");
       return;
     }
 
-    const finalPayload = {
-      ...(isEmail && { email: identifier }),
-      ...(isPhone && { phone: identifier }),
+    const payload = {
+      phone,
       password: data.password,
     };
 
-    console.log("Sending this payload:", finalPayload);
+    try {
+      const res = await loginUser(payload);
+
+      console.log("Login Success:", res);
+
+      localStorage.setItem("accessToken", res.data.accessToken);
+
+      router.push("/");
+    } catch (error: any) {
+      alert(error.message);
+    }
   };
 
   return (
@@ -43,36 +51,30 @@ export default function Login() {
         onSubmit={handleSubmit(onSubmit)}
         className="w-full max-w-md backdrop-blur-xl bg-white/40 shadow-2xl border border-white/30 rounded-3xl p-10 space-y-6 transition-all"
       >
-        {/* Header */}
         <h2 className="text-3xl font-extrabold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Welcome Back
         </h2>
-        <p className="text-center text-gray-600 text-sm">
-          Login to continue 🚀
-        </p>
 
-        {/* Phone or Email */}
+        {/* Phone input only */}
         <div className="space-y-1 flex justify-center items-center">
           <label className="text-sm font-semibold text-gray-700 whitespace-nowrap pr-2">
-            Phone / Email :
+            Phone :
           </label>
           <input
-            {...register("identifier", {
-              required: "Phone or Email is required",
-              validate: (value) => {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                const phoneRegex = /^01[0-9]{9}$/;
-                return (
-                  emailRegex.test(value) ||
-                  phoneRegex.test(value) ||
-                  "Enter a valid phone (11 digits) or email"
-                );
+            {...register("phone", {
+              required: "Phone is required",
+              pattern: {
+                value: /^01[0-9]{9}$/,
+                message: "Enter a valid BD phone number (11 digits)",
               },
             })}
-            placeholder="Enter phone or email"
+            placeholder="Enter phone number"
             className="p-3 rounded-xl w-full bg-white/40 border border-gray-300 
              focus:ring-4 focus:ring-blue-400/40 transition-all"
           />
+          {errors.phone && (
+            <p className="text-red-500 text-xs">{errors.phone.message}</p>
+          )}
         </div>
 
         {/* Password */}
@@ -84,16 +86,9 @@ export default function Login() {
             type="password"
             {...register("password", {
               required: "Password is required",
-              minLength: {
-                value: 6,
-                message: "At least 6 characters",
-              },
-              pattern: {
-                value: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/,
-                message: "Must include letters & numbers",
-              },
+              minLength: { value: 6, message: "At least 6 characters" },
             })}
-            className="p-3 rounded-xl w-full bg-white/40 border border-gray-300 focus:ring-4 focus:ring-blue-400/40 focus:outline-none transition-all"
+            className="p-3 rounded-xl w-full bg-white/40 border border-gray-300 focus:ring-4 focus:ring-blue-400/40 transition-all"
             placeholder="Enter password"
           />
           {errors.password && (
@@ -101,7 +96,6 @@ export default function Login() {
           )}
         </div>
 
-        {/* Register Link */}
         <p className="text-center text-gray-700 text-sm">
           Not registered yet?{" "}
           <Link
@@ -112,7 +106,6 @@ export default function Login() {
           </Link>
         </p>
 
-        {/* Submit Button */}
         <button
           type="submit"
           className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white font-bold shadow-lg transition-all"
