@@ -6,7 +6,7 @@ import { Stories } from "@/components/modules/feed/Stories";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-black pt-6">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-black pt-2">
       <div className="flex justify-between max-w-[1920px] mx-auto px-0 sm:px-4 gap-8 relative">
         {/* --- LEFT SIDEBAR (Navigation) --- */}
         <div className="hidden lg:block w-[280px] xl:w-[320px] shrink-0 sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar">

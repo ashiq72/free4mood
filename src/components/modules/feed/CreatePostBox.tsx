@@ -10,7 +10,7 @@ export const CreatePostBox = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-4 mb-6">
+    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-4 mb-2">
       <div className="flex gap-3 mb-4">
         <Image
           src="https://picsum.photos/200?random=41"

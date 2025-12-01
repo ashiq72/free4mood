@@ -30,7 +30,7 @@ export const Feed = () => {
 
   if (loading) return <p>Loading posts...</p>;
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-2 pb-4">
       {posts.map((post: any) => (
         <PostCard
           key={post._id}
