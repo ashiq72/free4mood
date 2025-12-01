@@ -1,6 +1,6 @@
 export const Stories = () => {
   return (
-    <div className="relative mb-6">
+    <div className="relative mb-2 mx-2">
       <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
         {/* Create Story Card */}
         <div className="min-w-[110px] h-[200px] rounded-xl overflow-hidden bg-white dark:bg-zinc-800 shadow-sm relative group cursor-pointer hover:opacity-90 transition-opacity">
