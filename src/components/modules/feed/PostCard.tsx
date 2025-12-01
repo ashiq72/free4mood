@@ -6,6 +6,7 @@ import {
   Users,
 } from "lucide-react";
 import { ActionButton } from "./ActionButton";
+import dayjs from "dayjs";
 
 export const PostCard = ({
   user,
@@ -29,7 +30,7 @@ export const PostCard = ({
               {user}
             </h4>
             <div className="flex items-center gap-1 text-xs text-gray-500">
-              <span>{time}</span>
+              <span>{dayjs(time).format("MMM DD, YYYY - h:mm A")}</span>
               <span>•</span>
               <Users className="w-3 h-3" />
             </div>

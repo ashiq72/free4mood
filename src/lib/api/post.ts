@@ -19,7 +19,7 @@ export const createPost = async (postData: PostData) => {
   }
 };
 
-export const getPosts = async () => {
+export const getAllPosts = async () => {
   const response = await fetch(`http://localhost:4000/api/v1/posts/`);
   return response.json();
 };
