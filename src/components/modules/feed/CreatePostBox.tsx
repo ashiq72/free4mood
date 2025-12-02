@@ -32,7 +32,7 @@ export const CreatePostBox = () => {
           </PopoverTrigger>
 
           <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg">
-            <PopoverModule />
+            <PopoverModule setOpen={setOpen} />
           </div>
         </Popover>
       </div>

@@ -14,7 +14,11 @@ import { createPost } from "@/lib/api/post";
 import { toast } from "sonner";
 // API
 
-export const PopoverModule = () => {
+export const PopoverModule = ({
+  setOpen,
+}: {
+  setOpen: (v: boolean) => void;
+}) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,6 +37,7 @@ export const PopoverModule = () => {
       // reset form
       setTitle("");
       setDescription("");
+      setOpen(false); // 👉 POPUP CLOSE HERE
     } catch (error: any) {
       console.error(error);
 
