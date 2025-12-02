@@ -6,13 +6,16 @@ interface PostData {
 
 export const createPost = async (postData: PostData) => {
   try {
-    const response = await fetch(`http://localhost:4000/api/v1/posts/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(postData),
-    });
+    const response = await fetch(
+      `http://localhost:4000/api/v1/posts/create-post`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(postData),
+      }
+    );
     return response.json();
   } catch (error) {
     console.error("Error creating post:", error);
