@@ -110,7 +110,25 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+html,
+body {
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
 
+/* Prevent auto zoom when focusing inputs */
+input,
+textarea,
+select,
+button {
+  font-size: 16px !important;
+}
+
+/* Also improve tap behavior */
+* {
+  touch-action: manipulation;
+}
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -118,8 +136,4 @@
   body {
     @apply bg-background text-foreground;
   }
-}
-
-html, body {
-  overscroll-behavior: none;
 }
