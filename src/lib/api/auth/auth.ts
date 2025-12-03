@@ -1,6 +1,6 @@
 export const loginUser = async (payload: any) => {
   try {
-    const res = await fetch(`http://localhost:4000/api/v1/auth/login`, {
+    const res = await fetch(`https://base360.onrender.com/v1/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
