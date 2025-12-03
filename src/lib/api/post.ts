@@ -4,18 +4,17 @@ interface PostData {
   [key: string]: unknown;
 }
 
-export const createPost = async (postData: PostData) => {
+export const createPost = async (formData: FormData) => {
   try {
     const response = await fetch(
       `https://base360.onrender.com/api/v1/posts/create-post`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(postData),
+        body: formData, // ⭐ MUST use FormData
+        // ❌ DO NOT set Content-Type manually
       }
     );
+
     return response.json();
   } catch (error) {
     console.error("Error creating post:", error);
