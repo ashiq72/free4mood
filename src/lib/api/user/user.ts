@@ -2,11 +2,14 @@
 
 export async function createUser(payload: any) {
   try {
-    const res = await fetch("http://localhost:4000/api/v1/users//create-user", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      "https://base360.vercel.app/api/v1/users//create-user",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
 
     const data = await res.json();
 
