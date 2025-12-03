@@ -14,8 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Free4Mood",
-  description: "An open source social media app.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  description: "An open source social media app."
 };
 
 export default function RootLayout({
@@ -25,12 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" >
-       <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-        />
-      </head>
+  
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
