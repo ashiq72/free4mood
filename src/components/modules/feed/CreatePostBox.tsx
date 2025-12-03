@@ -10,13 +10,23 @@ import { ImageIcon, Smile, Video } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { createPost } from "@/lib/api/post"; // adjust path
+import { createPost } from "@/lib/api/post";
 
 export const CreatePostBox = () => {
   const [open, setOpen] = useState(false);
-  // const [title, setTitle] = useState("Ashiq");
   const [description, setDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // 👉 handle image selection
+  const handleFileChange = (e: any) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
+  };
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,15 +34,26 @@ export const CreatePostBox = () => {
 
     try {
       const title = "Ashiq Ahmed";
-      const payload = { title, description };
-      await createPost(payload);
 
-      toast.success("Post created");
+      // ⭐ MUST USE FormData for image upload
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
 
-      setDescription(""); // reset textarea
-      setOpen(false); // close popup
+      if (file) {
+        formData.append("file", file); // MUST MATCH multer.single("file")
+      }
 
-      // ⭐ Reload entire page ⭐
+      await createPost(formData);
+
+      toast.success("Post created!");
+
+      setDescription("");
+      setFile(null);
+      setPreview(null);
+      setOpen(false);
+
+      // reload feed
       window.location.reload();
     } catch (error: any) {
       toast.error(error?.message || "Something went wrong");
@@ -43,7 +64,6 @@ export const CreatePostBox = () => {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      {/* Trigger */}
       <PopoverTrigger asChild>
         <div
           onClick={() => setOpen(true)}
@@ -62,7 +82,7 @@ export const CreatePostBox = () => {
         </div>
       </PopoverTrigger>
 
-      {/* Popup */}
+      {/* POPUP */}
       <PopoverContent
         side="bottom"
         align="center"
@@ -77,8 +97,9 @@ export const CreatePostBox = () => {
               exit={{ opacity: 0, scale: 0.92, y: -10 }}
               transition={{ duration: 0.18 }}
               className="p-5 space-y-4"
+              encType="multipart/form-data"
             >
-              {/* Input */}
+              {/* TEXT INPUT */}
               <textarea
                 autoFocus
                 value={description}
@@ -87,10 +108,33 @@ export const CreatePostBox = () => {
                 className="w-full h-32 bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 resize-none outline-none"
               />
 
-              {/* Actions */}
+              {/* IMAGE PREVIEW */}
+              {preview && (
+                <div className="w-full">
+                  <Image
+                    src={preview}
+                    width={600}
+                    height={400}
+                    alt="Preview"
+                    className="rounded-xl object-cover max-h-[300px] w-full"
+                  />
+                </div>
+              )}
+
+              {/* ACTIONS */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-300">
-                  <ImageIcon size={20} />
+                <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-300">
+                  {/* IMAGE UPLOAD BUTTON */}
+                  <label className="cursor-pointer">
+                    <ImageIcon size={22} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+
                   <Video size={20} />
                   <Smile size={20} />
                 </div>
