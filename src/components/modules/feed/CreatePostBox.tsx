@@ -62,7 +62,7 @@ export const CreatePostBox = () => {
       <PopoverContent
         side="bottom"
         align="center"
-        className="w-[370px] md:w-[670px] rounded-2xl p-0 border-none shadow-2xl bg-white dark:bg-zinc-900"
+        className="w-[350px] sm:w-[420px] md:w-[670px] rounded-2xl p-0 border-none shadow-2xl bg-white dark:bg-zinc-900"
       >
         <AnimatePresence>
           {open && (
