@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { getAllPosts } from "@/lib/api/post";
 import { PostCard } from "./PostCard";
+import { FeedSkeleton } from "@/components/shared/FeedSkeleton";
 
 interface IPost {
   title: string;
@@ -28,9 +29,9 @@ export const Feed = () => {
     loadPosts();
   }, []);
 
-  if (loading) return <p>Loading posts...</p>;
+  if (loading) return <FeedSkeleton />;
   return (
-    <div className="space-y-2 pb-4">
+    <div className="space-y-2 pb-6">
       {posts.map((post: any) => (
         <PostCard
           key={post._id}

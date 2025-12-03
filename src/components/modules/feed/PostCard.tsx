@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { ActionButton } from "./ActionButton";
 import dayjs from "dayjs";
+import Image from "next/image";
 
 export const PostCard = ({
   user,
@@ -20,10 +21,12 @@ export const PostCard = ({
     <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm overflow-hidden">
       <div className="p-4 flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <img
+          <Image
+            width={35}
+            height={35}
             src="https://picsum.photos/200?random=41"
             alt="User"
-            className="w-10 h-10 rounded-full object-cover"
+            className="rounded-full object-cover"
           />
           <div>
             <h4 className="font-bold text-gray-900 dark:text-white text-sm hover:underline cursor-pointer">
@@ -49,10 +52,13 @@ export const PostCard = ({
 
       {image && (
         <div className="bg-gray-100 dark:bg-black">
-          <img
+          <Image
             src={image}
             alt="Content"
-            className="w-full h-auto max-h-[500px] object-cover"
+            width={800} // you can adjust size
+            height={500}
+            className="w-full h-auto max-h-[300px] md:max-h-[400px] object-cover"
+            unoptimized // important for external image URLs
           />
         </div>
       )}

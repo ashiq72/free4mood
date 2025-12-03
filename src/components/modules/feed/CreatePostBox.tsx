@@ -1,65 +1,156 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { ImageIcon, Smile, Video } from "lucide-react";
 import Image from "next/image";
-import { Popover, PopoverTrigger } from "@/components/ui/popover";
-import { PopoverModule } from "./PopoverModule";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { createPost } from "@/lib/api/post";
 
 export const CreatePostBox = () => {
   const [open, setOpen] = useState(false);
+  const [description, setDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // 👉 handle image selection
+  const handleFileChange = (e: any) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
+  };
+
+  const handleCreatePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const title = "Ashiq Ahmed";
+
+      // ⭐ MUST USE FormData for image upload
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+
+      if (file) {
+        formData.append("file", file); // MUST MATCH multer.single("file")
+      }
+
+      await createPost(formData);
+
+      toast.success("Post created!");
+
+      setDescription("");
+      setFile(null);
+      setPreview(null);
+      setOpen(false);
+
+      // reload feed
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error?.message || "Something went wrong");
+    }
+
+    setLoading(false);
+  };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-4 mb-2">
-      <div className="flex gap-3 mb-4">
-        <Image
-          src="https://picsum.photos/200?random=41"
-          alt="User"
-          width={40}
-          height={40}
-          className="rounded-full object-cover"
-        />
-
-        {/* Popover Wrapper */}
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <input
-              type="text"
-              onFocus={() => setOpen(true)}
-              placeholder="What's on your mind, Ashiq?"
-              className="flex-1 bg-gray-100 dark:bg-zinc-800 rounded-full px-5 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus:outline-none dark:text-white"
-            />
-          </PopoverTrigger>
-
-          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg">
-            <PopoverModule setOpen={setOpen} />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-3 bg-white dark:bg-zinc-900 border rounded-2xl p-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        >
+          <Image
+            src="https://picsum.photos/200?random=41"
+            width={40}
+            height={40}
+            className="rounded-full"
+            alt="User avatar"
+          />
+          <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full px-4 py-2 text-zinc-500">
+            What is on your mind?
           </div>
-        </Popover>
-      </div>
+        </div>
+      </PopoverTrigger>
 
-      {/* bottom buttons */}
-      <div className="border-t border-gray-200 dark:border-zinc-800 pt-3 flex justify-between px-2">
-        <button className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-          <Video className="w-6 h-6 text-red-500" />
-          <span className="text-gray-600 dark:text-gray-300 font-medium text-sm">
-            Live Video
-          </span>
-        </button>
+      {/* POPUP */}
+      <PopoverContent
+        side="bottom"
+        align="center"
+        className="w-[350px] sm:w-[420px] md:w-[670px] rounded-2xl p-0 border-none shadow-2xl bg-white dark:bg-zinc-900"
+      >
+        <AnimatePresence>
+          {open && (
+            <motion.form
+              onSubmit={handleCreatePost}
+              initial={{ opacity: 0, scale: 0.92, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: -10 }}
+              transition={{ duration: 0.18 }}
+              className="p-5 space-y-4"
+              encType="multipart/form-data"
+            >
+              {/* TEXT INPUT */}
+              <textarea
+                autoFocus
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Write your post..."
+                className="w-full h-32 bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 resize-none outline-none"
+              />
 
-        <button className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-          <ImageIcon className="w-6 h-6 text-green-500" />
-          <span className="text-gray-600 dark:text-gray-300 font-medium text-sm">
-            Photo/Video
-          </span>
-        </button>
+              {/* IMAGE PREVIEW */}
+              {preview && (
+                <div className="w-full">
+                  <Image
+                    src={preview}
+                    width={600}
+                    height={400}
+                    alt="Preview"
+                    className="rounded-xl object-cover max-h-[300px] w-full"
+                  />
+                </div>
+              )}
 
-        <button className="items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors hidden sm:flex">
-          <Smile className="w-6 h-6 text-yellow-500" />
-          <span className="text-gray-600 dark:text-gray-300 font-medium text-sm">
-            Feeling/Activity
-          </span>
-        </button>
-      </div>
-    </div>
+              {/* ACTIONS */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-300">
+                  {/* IMAGE UPLOAD BUTTON */}
+                  <label className="cursor-pointer">
+                    <ImageIcon size={22} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+
+                  <Video size={20} />
+                  <Smile size={20} />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-60"
+                >
+                  {loading ? "Posting..." : "Post"}
+                </button>
+              </div>
+            </motion.form>
+          )}
+        </AnimatePresence>
+      </PopoverContent>
+    </Popover>
   );
 };
