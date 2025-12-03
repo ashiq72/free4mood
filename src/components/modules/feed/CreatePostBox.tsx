@@ -14,7 +14,7 @@ import { createPost } from "@/lib/api/post"; // adjust path
 
 export const CreatePostBox = () => {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("Ashiq");
+  // const [title, setTitle] = useState("Ashiq");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,6 +23,7 @@ export const CreatePostBox = () => {
     setLoading(true);
 
     try {
+      const title = "Ashiq Ahmed";
       const payload = { title, description };
       await createPost(payload);
 
@@ -30,6 +31,9 @@ export const CreatePostBox = () => {
 
       setDescription(""); // reset textarea
       setOpen(false); // close popup
+
+      // ⭐ Reload entire page ⭐
+      window.location.reload();
     } catch (error: any) {
       toast.error(error?.message || "Something went wrong");
     }
@@ -46,7 +50,7 @@ export const CreatePostBox = () => {
           className="flex items-center gap-3 bg-white dark:bg-zinc-900 border rounded-2xl p-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
         >
           <Image
-            src="/avatar.png"
+            src="https://picsum.photos/200?random=41"
             width={40}
             height={40}
             className="rounded-full"
