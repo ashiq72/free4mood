@@ -1,27 +1,25 @@
-// const BASE_URL = "https://base360.vercel.app/api/v1/";
-
-interface PostData {
-  [key: string]: unknown;
-}
+// No need PostData interface anymore
+// We are using FormData for file + text upload
 
 export const createPost = async (formData: FormData) => {
   try {
     const response = await fetch(
-      `https://base360.onrender.com/api/v1/posts/create-post`,
+      "https://base360.onrender.com/api/v1/posts/create-post",
       {
         method: "POST",
-        body: formData, // ⭐ MUST use FormData
-        // ❌ DO NOT set Content-Type manually
+        body: formData, // ⭐ Correct
+        // ❌ DO NOT set Content-Type
       }
     );
 
-    return response.json();
+    return await response.json();
   } catch (error) {
     console.error("Error creating post:", error);
+    throw error;
   }
 };
 
 export const getAllPosts = async () => {
-  const response = await fetch(`https://base360.onrender.com/api/v1/posts/`);
+  const response = await fetch("https://base360.onrender.com/api/v1/posts/");
   return response.json();
 };
