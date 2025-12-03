@@ -16,7 +16,9 @@ export default function Home() {
         {/* --- MIDDLE (Feed & Stories) --- */}
         <div className="flex-1 min-w-0 max-w-[700px] mx-auto">
           <Stories />
-          <CreatePostBox />
+          <div className="pb-1">
+            <CreatePostBox />
+          </div>
           <Feed />
         </div>
 
