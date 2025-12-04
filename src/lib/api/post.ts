@@ -4,11 +4,10 @@
 export const createPost = async (formData: FormData) => {
   try {
     const response = await fetch(
-      `https://base360.onrender.com/api/v1/posts/create-post`,
+      `${process.env.NEXT_PUBLIC_API_URL}/posts/create-post`,
       {
         method: "POST",
-        body: formData, // ⭐ Correct
-        // ❌ DO NOT set Content-Type
+        body: formData,
       }
     );
 
@@ -20,6 +19,6 @@ export const createPost = async (formData: FormData) => {
 };
 
 export const getAllPosts = async () => {
-  const response = await fetch(`https://base360.onrender.com/api/v1/posts/`);
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/`);
   return response.json();
 };
