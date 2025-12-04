@@ -3,6 +3,7 @@ import { loginUser } from "@/lib/api/auth/auth";
 import Link from "next/link";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface IFormInput {
   phone: string;
@@ -17,31 +18,24 @@ export default function Login() {
   } = useForm<IFormInput>();
 
   const router = useRouter();
-  const onSubmit: SubmitHandler<IFormInput> = async (data) => {
-    const phone = data.phone.trim();
-
-    const isPhone = /^01[0-9]{9}$/.test(phone);
-
-    if (!isPhone) {
-      alert("Invalid phone number!");
-      return;
-    }
-
-    const payload = {
-      phone,
-      password: data.password,
-    };
-
+  const onSubmit: SubmitHandler<IFormInput> = async ({ phone, password }) => {
     try {
+      // Validate phone
+      const cleanedPhone = phone.trim();
+      if (!/^01[0-9]{9}$/.test(cleanedPhone)) {
+        return toast.error("Invalid phone number!");
+      }
+
+      // Prepare payload
+      const payload = { phone: cleanedPhone, password };
+
+      // Login request
       const res = await loginUser(payload);
 
-      console.log("Login Success:", res);
-
-      localStorage.setItem("accessToken", res.data.accessToken);
-
+      toast.success("Login successful");
       router.push("/");
-    } catch (error: any) {
-      alert(error.message);
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
     }
   };
 

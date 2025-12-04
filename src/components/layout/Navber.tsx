@@ -9,16 +9,13 @@ import {
   Users,
   Bell,
   MessageCircle,
-  Menu,
   LogOut,
   Settings,
   User,
   PlusSquare,
 } from "lucide-react";
+import { useUser } from "@/context/UserContext";
 
-// --- Components Helpers ---
-
-// Nav Item Component for cleaner code
 const NavItem = ({
   icon: Icon,
   active,
@@ -71,6 +68,8 @@ const IconButton = ({
 export default function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const { user, setIsLoading } = useUser();
+  console.log(user);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -168,7 +167,7 @@ export default function Navbar() {
                       />
                       <div>
                         <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                          Safayet Hossain
+                          {user?.firstName} {user?.lastName}
                         </p>
                         <p className="text-xs text-gray-500">
                           View your profile
