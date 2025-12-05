@@ -68,7 +68,7 @@ const IconButton = ({
 export default function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { user, setIsLoading } = useUser();
+  const { user } = useUser();
   console.log(user);
 
   // Close dropdown on click outside
