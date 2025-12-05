@@ -1,8 +1,9 @@
 "use server";
 import { jwtDecode } from "jwt-decode";
 import { cookies } from "next/headers";
+import { FieldValues } from "react-hook-form";
 
-export const loginUser = async (payload: any) => {
+export const loginUser = async (payload: FieldValues) => {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
       method: "POST",
@@ -37,4 +38,8 @@ export const getCurrentUser = async () => {
   } else {
     return null;
   }
+};
+
+export const logout = async () => {
+  (await cookies()).delete("accessToken");
 };

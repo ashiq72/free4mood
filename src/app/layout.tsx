@@ -3,8 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { getCurrentUser } from "@/lib/api/auth/auth";
-import UserProvider from "@/context/UserContext";
-
+import Providers from "@/providers/Providers";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -27,14 +26,15 @@ export default async function RootLayout({
 }) {
   const user = await getCurrentUser(); // server-side cookie decode
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Toaster richColors position="top-center" />
-        {/* Client provider — but gets plain json (NOT async) */}
-        <UserProvider initialUser={user}>{children}</UserProvider>
-      </body>
-    </html>
+    <Providers>
+      <html lang="en">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <Toaster richColors position="top-center" />
+          {children}
+        </body>
+      </html>
+    </Providers>
   );
 }

@@ -1,11 +1,13 @@
 "use client";
 
+import { getCurrentUser } from "@/lib/api/auth/auth";
 import { IUser } from "@/types";
 import {
   createContext,
   Dispatch,
   SetStateAction,
   useContext,
+  useEffect,
   useState,
 } from "react";
 
@@ -20,13 +22,26 @@ const UserContext = createContext<IUserProviderValues | undefined>(undefined);
 
 interface UserProviderProps {
   children: React.ReactNode;
-  initialUser: IUser | null;
 }
 
-const UserProvider = ({ children, initialUser }: UserProviderProps) => {
-  const [user, setUser] = useState<IUser | null>(initialUser);
-  const [isLoading, setIsLoading] = useState(false);
+const UserProvider = ({ children }: UserProviderProps) => {
+  const [user, setUser] = useState<IUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    let mounted = true;
 
+    (async () => {
+      const currentUser = await getCurrentUser();
+      if (mounted) {
+        setUser(currentUser);
+        setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
   return (
     <UserContext.Provider value={{ user, setUser, isLoading, setIsLoading }}>
       {children}
