@@ -1,36 +1,31 @@
-import { getCurrentUser } from "@/lib/api/auth/auth";
+"use client";
+
 import { IUser } from "@/types";
 import {
   createContext,
   Dispatch,
   SetStateAction,
   useContext,
-  useEffect,
   useState,
 } from "react";
 
 interface IUserProviderValues {
   user: IUser | null;
   isLoading: boolean;
-  setUser: (user: IUser | null) => void;
+  setUser: Dispatch<SetStateAction<IUser | null>>;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
 }
 
 const UserContext = createContext<IUserProviderValues | undefined>(undefined);
 
-const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<IUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface UserProviderProps {
+  children: React.ReactNode;
+  initialUser: IUser | null;
+}
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const userRes = await getCurrentUser();
-      setUser(userRes);
-      setIsLoading(false);
-    };
-
-    fetchUser();
-  }, []);
+const UserProvider = ({ children, initialUser }: UserProviderProps) => {
+  const [user, setUser] = useState<IUser | null>(initialUser);
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <UserContext.Provider value={{ user, setUser, isLoading, setIsLoading }}>
@@ -40,13 +35,9 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useUser = () => {
-  const context = useContext(UserContext);
-
-  if (context == undefined) {
-    throw new Error("useUser must be used within the UserProvider context");
-  }
-
-  return context;
+  const ctx = useContext(UserContext);
+  if (!ctx) throw new Error("useUser must be used inside UserProvider");
+  return ctx;
 };
 
 export default UserProvider;

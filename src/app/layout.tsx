@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import Providers from "@/providers/Providers";
+import { getCurrentUser } from "@/lib/api/auth/auth";
+import UserProvider from "@/context/UserContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,32 +15,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-};
 export const metadata: Metadata = {
   title: "Free4Mood",
   description: "An open source social media app.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const user = await getCurrentUser(); // server-side cookie decode
   return (
-    <Providers>
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <Toaster richColors position="top-center" />
-          {children}
-        </body>
-      </html>
-    </Providers>
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <Toaster richColors position="top-center" />
+        {/* Client provider — but gets plain json (NOT async) */}
+        <UserProvider initialUser={user}>{children}</UserProvider>
+      </body>
+    </html>
   );
 }
