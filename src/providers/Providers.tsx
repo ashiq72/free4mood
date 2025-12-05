@@ -1,13 +1,9 @@
-// NO "use client"
+"use client";
+
 import UserProvider from "@/context/UserContext";
-import { getCurrentUser } from "@/lib/api/auth/auth";
 
-export default async function Providers({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const user = await getCurrentUser(); // server-side cookie decode
+const Providers = ({ children }: { children: React.ReactNode }) => {
+  return <UserProvider>{children}</UserProvider>;
+};
 
-  return <UserProvider initialUser={user}>{children}</UserProvider>;
-}
+export default Providers;
