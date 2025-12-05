@@ -1,9 +1,11 @@
 "use client";
-import { loginUser } from "@/lib/api/auth/auth";
+
+import { useState } from "react";
 import Link from "next/link";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { loginUser } from "@/lib/api/auth/auth";
 
 interface IFormInput {
   phone: string;
@@ -11,31 +13,37 @@ interface IFormInput {
 }
 
 export default function Login() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<IFormInput>();
 
-  const router = useRouter();
+  // --- Phone validation helper ---
+  const validatePhone = (phone: string) => /^01[0-9]{9}$/.test(phone.trim());
+
   const onSubmit: SubmitHandler<IFormInput> = async ({ phone, password }) => {
+    setLoading(true);
+
     try {
-      // Validate phone
       const cleanedPhone = phone.trim();
-      if (!/^01[0-9]{9}$/.test(cleanedPhone)) {
-        return toast.error("Invalid phone number!");
+
+      if (!validatePhone(cleanedPhone)) {
+        toast.error("Invalid phone number!");
+        return;
       }
 
-      // Prepare payload
-      const payload = { phone: cleanedPhone, password };
-
-      // Login request
-      const res = await loginUser(payload);
+      await loginUser({ phone: cleanedPhone, password });
 
       toast.success("Login successful");
       router.push("/");
     } catch (err: any) {
       toast.error(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,11 +57,9 @@ export default function Login() {
           Welcome Back
         </h2>
 
-        {/* Phone input only */}
-        <div className="space-y-1 flex justify-center items-center">
-          <label className="text-sm font-semibold text-gray-700 whitespace-nowrap pr-2">
-            Phone :
-          </label>
+        {/* ---- Input Group Component (Refactor-ready) ---- */}
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-gray-700">Phone :</label>
           <input
             {...register("phone", {
               required: "Phone is required",
@@ -64,16 +70,15 @@ export default function Login() {
             })}
             placeholder="Enter phone number"
             className="p-3 rounded-xl w-full bg-white/40 border border-gray-300 
-             focus:ring-4 focus:ring-blue-400/40 transition-all"
+            focus:ring-4 focus:ring-blue-400/40 transition-all"
           />
           {errors.phone && (
             <p className="text-red-500 text-xs">{errors.phone.message}</p>
           )}
         </div>
 
-        {/* Password */}
-        <div className="space-y-1 flex justify-center items-center">
-          <label className="text-sm font-semibold text-gray-700 whitespace-nowrap pr-2">
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-gray-700">
             Password :
           </label>
           <input
@@ -82,7 +87,8 @@ export default function Login() {
               required: "Password is required",
               minLength: { value: 6, message: "At least 6 characters" },
             })}
-            className="p-3 rounded-xl w-full bg-white/40 border border-gray-300 focus:ring-4 focus:ring-blue-400/40 transition-all"
+            className="p-3 rounded-xl w-full bg-white/40 border border-gray-300 
+            focus:ring-4 focus:ring-blue-400/40 transition-all"
             placeholder="Enter password"
           />
           {errors.password && (
@@ -100,11 +106,22 @@ export default function Login() {
           </Link>
         </p>
 
+        {/* ---- Button ---- */}
         <button
           type="submit"
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white font-bold shadow-lg transition-all"
+          disabled={loading}
+          className={`w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 
+          text-white font-bold shadow-lg transition-all flex items-center justify-center
+          ${loading ? "opacity-70 cursor-not-allowed" : "hover:opacity-90"}`}
         >
-          Login
+          {loading ? (
+            <div className="flex items-center space-x-2">
+              <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>Logging in...</span>
+            </div>
+          ) : (
+            "Login"
+          )}
         </button>
       </form>
     </div>
