@@ -2,8 +2,12 @@
 
 import UserProvider from "@/context/UserContext";
 
-const Providers = ({ children }: { children: React.ReactNode }) => {
-  return <UserProvider>{children}</UserProvider>;
-};
-
-export default Providers;
+export default function Providers({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: any;
+}) {
+  return <UserProvider initialUser={user}>{children}</UserProvider>;
+}
