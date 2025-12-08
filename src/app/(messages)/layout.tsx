@@ -1,4 +1,4 @@
-import Navber from "@/components/layout/Navber";
+import Navber from "@/app/components/layout/Navber";
 
 const CommonLayout = ({ children }: { children: React.ReactNode }) => {
   return (
