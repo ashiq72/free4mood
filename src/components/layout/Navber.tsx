@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Search,
   Home,
@@ -15,6 +15,7 @@ import {
   PlusSquare,
 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
+import { logout } from "@/lib/api/auth/auth";
 
 const NavItem = ({
   icon: Icon,
@@ -27,22 +28,17 @@ const NavItem = ({
 }) => (
   <Link
     href={href}
-    className={`
-      flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 group relative
-      ${
-        active
-          ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400"
-          : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800"
-      }
-    `}
+    className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 group relative ${
+      active
+        ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400"
+        : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800"
+    }`}
   >
     <Icon className={`w-6 h-6 ${active ? "fill-current" : "stroke-current"}`} />
-    {/* Tooltip text could go here */}
     <span className="absolute bottom-0 w-1 h-1 rounded-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity translate-y-1"></span>
   </Link>
 );
 
-// Icon Button Component
 const IconButton = ({
   icon: Icon,
   count,
@@ -57,29 +53,39 @@ const IconButton = ({
     className="relative p-2.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
   >
     <Icon className="w-5 h-5" />
-    {count && count > 0 && (
+    {count ? (
       <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-white dark:border-black">
         {count}
       </span>
-    )}
+    ) : null}
   </button>
 );
 
 export default function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
 
+  const handleLogout = async () => {
+    await logout();
+
+    // Reload page so user state becomes null everywhere
+    window.location.reload();
+    setIsUserMenuOpen(false);
+  };
+
   // Close dropdown on click outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
         userMenuRef.current &&
-        !userMenuRef.current.contains(event.target as Node)
+        !userMenuRef.current.contains(e.target as Node)
       ) {
         setIsUserMenuOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -87,7 +93,7 @@ export default function Navbar() {
   const userMenuItems = [
     { name: "Your Profile", href: "/profile", icon: User },
     { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Sign Out", href: "/logout", icon: LogOut },
+    { name: "Sign Out", action: handleLogout, icon: LogOut },
   ];
 
   return (
@@ -95,8 +101,8 @@ export default function Navbar() {
       <nav className="bg-white/90 dark:bg-black/90 backdrop-blur-lg border-b border-gray-200 dark:border-zinc-800">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* --- Left Side: Logo & Search --- */}
-            <div className="flex items-center gap-4 lg:gap-8 w-fit">
+            {/* Left */}
+            <div className="flex items-center gap-4 lg:gap-8">
               <Link href="/" className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
                   F
@@ -108,19 +114,17 @@ export default function Navbar() {
 
               <div className="hidden md:flex items-center">
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                  </div>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
-                    className="block w-64 pl-10 pr-3 py-2 border-none rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-black transition-all text-sm"
+                    className="block w-64 pl-10 pr-3 py-2 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-black transition-all text-sm"
                     placeholder="Search friends, posts..."
                   />
                 </div>
               </div>
             </div>
 
-            {/* --- Middle: Navigation Icons --- */}
+            {/* Middle */}
             <div className="hidden md:flex items-center justify-center flex-1 max-w-xl mx-4">
               <div className="flex items-center space-x-2 w-full justify-between">
                 <NavItem icon={Home} href="/" active />
@@ -130,70 +134,80 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* --- Right Side: Actions & Profile --- */}
-            <div className="flex items-center justify-end gap-2 sm:gap-4 min-w-[200px]">
-              <div className="flex items-center gap-2">
-                <IconButton icon={MessageCircle} count={3} />
-                <IconButton icon={Bell} count={12} />
-              </div>
+            {/* Right */}
+            <div className="flex items-center gap-2 sm:gap-4 ">
+              <IconButton icon={MessageCircle} count={3} />
+              <IconButton icon={Bell} count={12} />
 
-              {/* Profile Dropdown */}
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-zinc-700"
-                >
-                  <img
-                    src="https://picsum.photos/200?random=41"
-                    alt="User"
-                    className="w-8 h-8 rounded-full object-cover ring-2 ring-white dark:ring-black"
-                  />
-                  <div className="hidden lg:block text-left px-1">
-                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                      Safayet H.
-                    </p>
-                  </div>
-                </button>
+              {/* Profile OR Login */}
+              {user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    <img
+                      src="https://picsum.photos/200?random=41"
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-white dark:ring-black"
+                    />
+                    <span className="hidden lg:block text-xs font-semibold text-gray-700 dark:text-gray-200">
+                      {user?.firstName} {user?.lastName}
+                    </span>
+                  </button>
 
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 p-2 transform origin-top-right transition-all animate-in fade-in slide-in-from-top-2">
-                    {/* User Info Card inside Dropdown */}
-                    <div className="p-3 mb-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl flex items-center gap-3">
-                      <img
-                        src="https://picsum.photos/200?random=41"
-                        alt="User"
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                          {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          View your profile
-                        </p>
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 p-2">
+                      {/* User Card */}
+                      <div className="p-3 mb-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl flex items-center gap-3">
+                        <img
+                          src="https://picsum.photos/200?random=41"
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                        <div>
+                          <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                            {user?.firstName} {user?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            View your profile
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Menu Items */}
+                      <div className="space-y-1">
+                        {userMenuItems.map((item) =>
+                          item.action ? (
+                            <button
+                              key={item.name}
+                              onClick={item.action}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition"
+                            >
+                              <item.icon className="w-4 h-4 text-gray-500" />
+                              {item.name}
+                            </button>
+                          ) : (
+                            <Link
+                              key={item.name}
+                              href={item.href!}
+                              className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition"
+                            >
+                              <item.icon className="w-4 h-4 text-gray-500" />
+                              {item.name}
+                            </Link>
+                          )
+                        )}
                       </div>
                     </div>
-
-                    <div className="space-y-1">
-                      {userMenuItems.map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
-                        >
-                          <item.icon className="w-4 h-4 text-gray-500" />
-                          {item.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Mobile Menu Button */}
-              {/* <button className="md:hidden p-2 text-gray-600 dark:text-gray-300">
-                <Menu className="w-6 h-6" />
-              </button> */}
+                  )}
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+                >
+                  Login
+                </Link>
+              )}
             </div>
           </div>
         </div>
