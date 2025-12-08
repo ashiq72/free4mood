@@ -1,4 +1,4 @@
-import Navber from "@/app/components/layout/Navber";
+import Navber from "@/components/layout/Navber";
 import { getCurrentUser } from "@/lib/api/auth/auth";
 import Providers from "@/providers/Providers";
 
