@@ -5,7 +5,7 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/app/components/ui/popover";
+} from "@/components/ui/popover";
 import { ImageIcon, Smile, Video } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";

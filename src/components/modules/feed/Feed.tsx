@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { getAllPosts } from "@/lib/api/post";
 import { PostCard } from "./PostCard";
-import { FeedSkeleton } from "@/app/components/shared/FeedSkeleton";
+import { FeedSkeleton } from "@/components/shared/FeedSkeleton";
 
 interface IPost {
   title: string;
