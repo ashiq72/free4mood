@@ -39,27 +39,39 @@ const NavItem = ({
   </Link>
 );
 
-const IconButton = ({
+type IconButtonProps = {
+  icon: React.ElementType;
+  count?: number;
+  onClick?: () => void;
+  className?: string;
+};
+
+export const IconButton: React.FC<IconButtonProps> = ({
   icon: Icon,
   count,
   onClick,
-}: {
-  icon: any;
-  count?: number;
-  onClick?: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    className="relative p-2.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
-  >
-    <Icon className="w-5 h-5" />
-    {count ? (
-      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-white dark:border-black">
-        {count}
-      </span>
-    ) : null}
-  </button>
-);
+  className = "",
+}) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`relative p-2.5 rounded-full bg-gray-100 dark:bg-zinc-800 
+        text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-zinc-700 
+        transition-colors cursor-pointer ${className}`}
+    >
+      <Icon className="w-5 h-5" />
+      {count ? (
+        <span
+          className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center
+          rounded-full bg-red-500 text-[10px] font-bold text-white border-2 
+          border-white dark:border-black"
+        >
+          {count}
+        </span>
+      ) : null}
+    </button>
+  );
+};
 
 export default function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -135,16 +147,20 @@ export default function Navbar() {
             </div>
 
             {/* Right */}
-            <div className="flex items-center gap-2 sm:gap-4 ">
-              <IconButton icon={MessageCircle} count={3} />
-              <IconButton icon={Bell} count={12} />
+            {user ? (
+              <div className="flex items-center gap-2 sm:gap-4  ">
+                <div className="cursor-pointer">
+                  <IconButton icon={MessageCircle} count={3} />
+                </div>
+                <div className="cursor-pointer">
+                  <IconButton icon={Bell} count={12} />
+                </div>
+                {/* Profile OR Login */}
 
-              {/* Profile OR Login */}
-              {user ? (
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                   >
                     <img
                       src="https://picsum.photos/200?random=41"
@@ -180,9 +196,9 @@ export default function Navbar() {
                             <button
                               key={item.name}
                               onClick={item.action}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition"
+                              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition cursor-pointer"
                             >
-                              <item.icon className="w-4 h-4 text-gray-500" />
+                              <item.icon className="w-4 h-4 text-gray-500 " />
                               {item.name}
                             </button>
                           ) : (
@@ -200,15 +216,15 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-              ) : (
-                <Link
-                  href="/login"
-                  className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
-                >
-                  Login
-                </Link>
-              )}
-            </div>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition cursor-pointer"
+              >
+                Login
+              </Link>
+            )}
           </div>
         </div>
       </nav>
