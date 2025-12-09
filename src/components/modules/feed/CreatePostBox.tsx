@@ -11,6 +11,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { createPost } from "@/lib/api/post";
+import { useUser } from "@/context/UserContext";
 
 export const CreatePostBox = () => {
   const [open, setOpen] = useState(false);
@@ -18,6 +19,7 @@ export const CreatePostBox = () => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { user } = useUser();
 
   // 👉 handle image selection
   const handleFileChange = (e: any) => {
@@ -33,7 +35,7 @@ export const CreatePostBox = () => {
     setLoading(true);
 
     try {
-      const title = "Ashiq Ahmed";
+      const title = `${user?.firstName} ${user?.lastName}`;
 
       // ⭐ MUST USE FormData for image upload
       const formData = new FormData();
