@@ -11,11 +11,15 @@ import {
   Grid,
   Camera,
   PenSquare,
-  Heart,
-  MessageCircle,
-  Share2,
+  // Heart,
+  // MessageCircle,
+  // Share2,
   Video,
 } from "lucide-react";
+import { useUser } from "@/context/UserContext";
+// import { PostCard } from "@/components/modules/feed/PostCard";
+import { Feed } from "@/components/modules/feed/Feed";
+import Image from "next/image";
 
 // --- Types & Interfaces ---
 interface TabItem {
@@ -26,7 +30,7 @@ interface TabItem {
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("posts");
-
+  const { user } = useUser();
   const tabs: TabItem[] = [
     { id: "posts", label: "Posts", icon: Grid },
     { id: "about", label: "About", icon: Users }, // Contextual icon
@@ -42,7 +46,9 @@ export default function Profile() {
         <div className='max-w-7xl mx-auto'>
           {/* Cover Photo */}
           <div className='relative h-64 md:h-80 w-full rounded-b-xl overflow-hidden group'>
-            <img
+            <Image
+              width={35}
+              height={35}
               src='https://images.unsplash.com/photo-1707343843437-caacff5cfa74?q=80&w=2940&auto=format&fit=crop'
               alt='Cover'
               className='w-full h-full object-cover'
@@ -60,7 +66,9 @@ export default function Profile() {
               {/* Profile Picture */}
               <div className='relative'>
                 <div className='w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-zinc-900 overflow-hidden bg-gray-200'>
-                  <img
+                  <Image
+                    width={35}
+                    height={35}
                     src='https://picsum.photos/200?random=41'
                     alt='Profile'
                     className='w-full h-full object-cover'
@@ -74,17 +82,19 @@ export default function Profile() {
               {/* Name & Headline */}
               <div className='flex-1 mt-2 md:mt-0 md:mb-4'>
                 <h1 className='text-2xl md:text-3xl font-bold text-gray-900 dark:text-white'>
-                  Safayet Hossain
+                  {user?.firstName} {user?.lastName}
                 </h1>
                 <p className='text-gray-500 dark:text-gray-400 font-medium'>
-                  Web Designer & Developer • 2.4k followers
+                  Web Designer & Developer • 0 followers
                 </p>
 
                 {/* Followers Thumbnails (Optional UI Candy) */}
                 <div className='flex items-center gap-1 mt-2'>
                   <div className='flex -space-x-2 overflow-hidden'>
                     {[1, 2, 3].map((i) => (
-                      <img
+                      <Image
+                        width={35}
+                        height={35}
                         key={i}
                         className='inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-zinc-900'
                         src={`https://picsum.photos/100?random=${i}`}
@@ -93,7 +103,7 @@ export default function Profile() {
                     ))}
                   </div>
                   <span className='text-xs text-gray-500 ml-2'>
-                    Followed by DesignTeam + 12 others
+                    Followed by DesignTeam + 1 others
                   </span>
                 </div>
               </div>
@@ -191,7 +201,9 @@ export default function Profile() {
                     key={i}
                     className='aspect-square rounded-lg overflow-hidden bg-gray-100'
                   >
-                    <img
+                    <Image
+                      width={35}
+                      height={35}
                       src={`https://picsum.photos/300?random=${i + 10}`}
                       alt='Gallery'
                       className='w-full h-full object-cover hover:scale-110 transition-transform duration-300'
@@ -218,7 +230,9 @@ export default function Profile() {
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className='text-center'>
                     <div className='aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2'>
-                      <img
+                      <Image
+                        width={35}
+                        height={35}
                         src={`https://picsum.photos/200?random=${i + 50}`}
                         alt='Friend'
                         className='w-full h-full object-cover'
@@ -238,7 +252,9 @@ export default function Profile() {
             {/* Create Post Input */}
             <div className='bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-zinc-800'>
               <div className='flex gap-4'>
-                <img
+                <Image
+                  width={35}
+                  height={35}
                   src='https://picsum.photos/200?random=41'
                   alt='Me'
                   className='w-10 h-10 rounded-full object-cover'
@@ -268,23 +284,23 @@ export default function Profile() {
                 </div>
               </div>
             </div>
-
+            <Feed />
             {/* Pinned/Featured Post */}
-            <PostCard
+            {/* <PostCard
               image='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'
               text="Just finished working on the new Bponi Suite dashboard design! 🚀 Using Rust for backend and Flutter for the app. It's blazing fast."
               time='2 hours ago'
               likes='234'
               comments='45'
-            />
+            /> */}
 
             {/* Text Only Post */}
-            <PostCard
+            {/* <PostCard
               text='Does anyone have a good recommendation for a Rust API schema library? Need something robust for version management.'
               time='5 hours ago'
               likes='89'
               comments='12'
-            />
+            /> */}
           </div>
         </div>
       </div>
@@ -293,84 +309,85 @@ export default function Profile() {
 }
 
 // --- Helper Component: Post Card ---
-const PostCard = ({
-  image,
-  text,
-  time,
-  likes,
-  comments,
-}: {
-  image?: string;
-  text: string;
-  time: string;
-  likes: string;
-  comments: string;
-}) => {
-  return (
-    <div className='bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden'>
-      {/* Post Header */}
-      <div className='p-4 flex items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <img
-            src='https://picsum.photos/200?random=41'
-            alt='User'
-            className='w-10 h-10 rounded-full object-cover'
-          />
-          <div>
-            <h3 className='font-semibold text-gray-900 dark:text-white text-sm'>
-              Safayet Hossain
-            </h3>
-            <p className='text-xs text-gray-500'>{time}</p>
-          </div>
-        </div>
-        <button className='text-gray-400 hover:text-gray-600'>
-          <MoreHorizontal className='w-5 h-5' />
-        </button>
-      </div>
+// const PostCard = ({
+//   image,
+//   text,
+//   time,
+//   likes,
+//   comments,
+// }: {
+//   image?: string;
+//   text: string;
+//   time: string;
+//   likes: string;
+//   comments: string;
+// }) => {
+//   const { user } = useUser();
+//   return (
+//     <div className='bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden'>
+//       {/* Post Header */}
+//       <div className='p-4 flex items-center justify-between'>
+//         <div className='flex items-center gap-3'>
+//           <img
+//             src='https://picsum.photos/200?random=41'
+//             alt='User'
+//             className='w-10 h-10 rounded-full object-cover'
+//           />
+//           <div>
+//             <h3 className='font-semibold text-gray-900 dark:text-white text-sm'>
+//               {user?.firstName} {user?.lastName}
+//             </h3>
+//             <p className='text-xs text-gray-500'>{time}</p>
+//           </div>
+//         </div>
+//         <button className='text-gray-400 hover:text-gray-600'>
+//           <MoreHorizontal className='w-5 h-5' />
+//         </button>
+//       </div>
 
-      {/* Post Content */}
-      <div className='px-4 pb-2'>
-        <p className='text-gray-800 dark:text-gray-200 text-sm mb-3 leading-relaxed'>
-          {text}
-        </p>
-      </div>
+//       {/* Post Content */}
+//       <div className='px-4 pb-2'>
+//         <p className='text-gray-800 dark:text-gray-200 text-sm mb-3 leading-relaxed'>
+//           {text}
+//         </p>
+//       </div>
 
-      {image && (
-        <div className='w-full h-80 bg-gray-100'>
-          <img
-            src={image}
-            alt='Post Content'
-            className='w-full h-full object-cover'
-          />
-        </div>
-      )}
+//       {image && (
+//         <div className='w-full h-80 bg-gray-100'>
+//           <img
+//             src={image}
+//             alt='Post Content'
+//             className='w-full h-full object-cover'
+//           />
+//         </div>
+//       )}
 
-      {/* Post Stats */}
-      <div className='px-4 py-2 flex items-center justify-between text-xs text-gray-500 border-b border-gray-100 dark:border-zinc-800'>
-        <div className='flex items-center gap-1'>
-          <div className='bg-blue-500 p-1 rounded-full'>
-            <Heart className='w-2 h-2 text-white fill-current' />
-          </div>
-          <span>{likes} likes</span>
-        </div>
-        <span>{comments} comments • 5 shares</span>
-      </div>
+//       {/* Post Stats */}
+//       <div className='px-4 py-2 flex items-center justify-between text-xs text-gray-500 border-b border-gray-100 dark:border-zinc-800'>
+//         <div className='flex items-center gap-1'>
+//           <div className='bg-blue-500 p-1 rounded-full'>
+//             <Heart className='w-2 h-2 text-white fill-current' />
+//           </div>
+//           <span>{likes} likes</span>
+//         </div>
+//         <span>{comments} comments • 5 shares</span>
+//       </div>
 
-      {/* Action Buttons */}
-      <div className='px-2 py-1 flex items-center justify-between'>
-        <button className='flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors text-gray-600 dark:text-gray-400 font-medium text-sm group'>
-          <Heart className='w-5 h-5 group-hover:text-red-500 transition-colors' />
-          Like
-        </button>
-        <button className='flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors text-gray-600 dark:text-gray-400 font-medium text-sm'>
-          <MessageCircle className='w-5 h-5' />
-          Comment
-        </button>
-        <button className='flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors text-gray-600 dark:text-gray-400 font-medium text-sm'>
-          <Share2 className='w-5 h-5' />
-          Share
-        </button>
-      </div>
-    </div>
-  );
-};
+//       {/* Action Buttons */}
+//       <div className='px-2 py-1 flex items-center justify-between'>
+//         <button className='flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors text-gray-600 dark:text-gray-400 font-medium text-sm group'>
+//           <Heart className='w-5 h-5 group-hover:text-red-500 transition-colors' />
+//           Like
+//         </button>
+//         <button className='flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors text-gray-600 dark:text-gray-400 font-medium text-sm'>
+//           <MessageCircle className='w-5 h-5' />
+//           Comment
+//         </button>
+//         <button className='flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors text-gray-600 dark:text-gray-400 font-medium text-sm'>
+//           <Share2 className='w-5 h-5' />
+//           Share
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
