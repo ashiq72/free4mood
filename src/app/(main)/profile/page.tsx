@@ -21,15 +21,9 @@ import { useUser } from "@/context/UserContext";
 import { Feed } from "@/components/modules/feed/Feed";
 import Image from "next/image";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import EditProfileModal from "./EditProfileModal";
+import EditProfileFullModal from "./Modal/EditProfileFullModal";
+import EditProfileImageModal from "./Modal/EditProfileImageModal";
+import EditProfileCoverModal from "./Modal/EditProfileCoverModal";
 // --- Types & Interfaces ---
 interface TabItem {
   id: string;
@@ -38,7 +32,9 @@ interface TabItem {
 }
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("posts");
-  const [open, setOpen] = useState(false);
+  const [openFullModal, setOpenFullModal] = useState(false);
+  const [openImageModal, setOpenImageModal] = useState(false);
+  const [openCoverModal, setOpenCoverModal] = useState(false);
   const { user } = useUser();
   const tabs: TabItem[] = [
     { id: "posts", label: "Posts", icon: Grid },
@@ -63,10 +59,27 @@ export default function Profile() {
               className="w-full h-full object-cover"
             />
             {/* Edit Cover Button */}
-            <button className="absolute bottom-4 right-4 bg-white/80 dark:bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white transition-colors flex items-center gap-2">
-              <Camera className="w-4 h-4" />
-              <span className="hidden sm:inline">Edit Cover Photo</span>
-            </button>
+            <div>
+              <button
+                onClick={() => setOpenCoverModal(true)}
+                className="absolute bottom-4 right-4 bg-white/80 dark:bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white transition-colors flex items-center gap-2"
+              >
+                <Camera className="w-4 h-4 cursor-pointer" />
+                <span className="hidden sm:inline cursor-pointer">
+                  Edit Cover Photo
+                </span>
+              </button>
+              {/* Custom Popup */}
+              <EditProfileCoverModal
+                openCoverModal={openCoverModal}
+                onClose={() => setOpenCoverModal(false)}
+              >
+                <h2 className="text-xl font-semibold mb-2">Edit Cover Photo</h2>
+                <p className="text-sm text-zinc-500 mb-4">
+                  Set the dimensions for the layer.
+                </p>
+              </EditProfileCoverModal>
+            </div>
           </div>
 
           {/* Profile Info Area */}
@@ -83,9 +96,25 @@ export default function Profile() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <button className="absolute bottom-2 right-2 p-2 bg-gray-100 dark:bg-zinc-800 rounded-full hover:bg-gray-200 transition-colors border border-white dark:border-black">
-                  <Camera className="w-4 h-4" />
-                </button>
+                <div>
+                  <button
+                    onClick={() => setOpenImageModal(true)}
+                    className="absolute bottom-2 right-2 p-2 bg-gray-100 dark:bg-zinc-800 rounded-full hover:bg-gray-200 transition-colors border border-white dark:border-black cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4 cursor-pointer" />
+                  </button>
+
+                  {/* Custom Popup */}
+                  <EditProfileImageModal
+                    openImageModal={openImageModal}
+                    onClose={() => setOpenImageModal(false)}
+                  >
+                    <h2 className="text-xl font-semibold mb-2">Edit Profile</h2>
+                    <p className="text-sm text-zinc-500 mb-4">
+                      Set the dimensions for the layer.
+                    </p>
+                  </EditProfileImageModal>
+                </div>
               </div>
 
               {/* Name & Headline */}
@@ -122,7 +151,7 @@ export default function Profile() {
                 <div>
                   {/* Button */}
                   <button
-                    onClick={() => setOpen(true)}
+                    onClick={() => setOpenFullModal(true)}
                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center gap-2"
                   >
                     <PenSquare className="w-4 h-4" />
@@ -130,7 +159,10 @@ export default function Profile() {
                   </button>
 
                   {/* Custom Popup */}
-                  <EditProfileModal open={open} onClose={() => setOpen(false)}>
+                  <EditProfileFullModal
+                    openFullModal={openFullModal}
+                    onClose={() => setOpenFullModal(false)}
+                  >
                     <h2 className="text-xl font-semibold mb-2">Edit Profile</h2>
                     <p className="text-sm text-zinc-500 mb-4">
                       Set the dimensions for the layer.
@@ -154,7 +186,7 @@ export default function Profile() {
 
                       {/* ...your fields */}
                     </div>
-                  </EditProfileModal>
+                  </EditProfileFullModal>
                 </div>
 
                 <button className="px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-colors">
