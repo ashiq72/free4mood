@@ -17,7 +17,7 @@ interface IFormInput {
   firstName: string;
   lastName: string;
   gender: GenderEnum;
-  phone: string; // Use string to avoid number loss
+  phone: string;
   password: string;
 }
 
