@@ -1,5 +1,3 @@
-// src/lib/api/user.ts
-
 export async function createUser(payload: any) {
   try {
     const res = await fetch(
@@ -11,10 +9,17 @@ export async function createUser(payload: any) {
       }
     );
 
-    const data = await res.json();
+    let data;
+
+    try {
+      // Try to parse JSON safely
+      data = await res.json();
+    } catch {
+      throw new Error("Server returned invalid JSON");
+    }
 
     if (!res.ok) {
-      throw new Error(data.message || "User creation failed");
+      throw new Error(data.message || "Failed to create user");
     }
 
     return data;
