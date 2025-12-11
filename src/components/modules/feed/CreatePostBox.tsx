@@ -65,10 +65,18 @@ export const CreatePostBox = () => {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    // open={open} onOpenChange={setOpen}
+    <Popover>
       <PopoverTrigger asChild>
         <div
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            if (!user) {
+              window.location.href = "/login";
+              return;
+            } else {
+              setOpen(true);
+            }
+          }}
           className="flex items-center gap-3 bg-white dark:bg-zinc-900 border rounded-2xl p-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
         >
           <Image

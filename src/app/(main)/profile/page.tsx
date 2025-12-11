@@ -21,15 +21,24 @@ import { useUser } from "@/context/UserContext";
 import { Feed } from "@/components/modules/feed/Feed";
 import Image from "next/image";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import EditProfileModal from "./EditProfileModal";
 // --- Types & Interfaces ---
 interface TabItem {
   id: string;
   label: string;
   icon: any;
 }
-
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("posts");
+  const [open, setOpen] = useState(false);
   const { user } = useUser();
   const tabs: TabItem[] = [
     { id: "posts", label: "Posts", icon: Grid },
@@ -40,94 +49,128 @@ export default function Profile() {
   ];
 
   return (
-    <div className='min-h-screen bg-gray-100 dark:bg-black pb-20'>
+    <div className="min-h-screen bg-gray-100 dark:bg-black pb-20">
       {/* 1. Profile Header Section (Cover + Info) */}
-      <div className='bg-white dark:bg-zinc-900 shadow-sm mb-6'>
-        <div className='max-w-7xl mx-auto'>
+      <div className="bg-white dark:bg-zinc-900 shadow-sm mb-6">
+        <div className="max-w-7xl mx-auto">
           {/* Cover Photo */}
-          <div className='relative h-64 md:h-80 w-full rounded-b-xl overflow-hidden group'>
+          <div className="relative h-64 md:h-80 w-full rounded-b-xl overflow-hidden group">
             <Image
               width={35}
               height={35}
-              src='https://images.unsplash.com/photo-1707343843437-caacff5cfa74?q=80&w=2940&auto=format&fit=crop'
-              alt='Cover'
-              className='w-full h-full object-cover'
+              src="https://images.unsplash.com/photo-1707343843437-caacff5cfa74?q=80&w=2940&auto=format&fit=crop"
+              alt="Cover"
+              className="w-full h-full object-cover"
             />
             {/* Edit Cover Button */}
-            <button className='absolute bottom-4 right-4 bg-white/80 dark:bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white transition-colors flex items-center gap-2'>
-              <Camera className='w-4 h-4' />
-              <span className='hidden sm:inline'>Edit Cover Photo</span>
+            <button className="absolute bottom-4 right-4 bg-white/80 dark:bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white transition-colors flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              <span className="hidden sm:inline">Edit Cover Photo</span>
             </button>
           </div>
 
           {/* Profile Info Area */}
-          <div className='px-4 sm:px-8 pb-4'>
-            <div className='flex flex-col md:flex-row items-start md:items-end -mt-12 md:-mt-16 gap-6'>
+          <div className="px-4 sm:px-8 pb-4">
+            <div className="flex flex-col md:flex-row items-start md:items-end -mt-12 md:-mt-16 gap-6">
               {/* Profile Picture */}
-              <div className='relative'>
-                <div className='w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-zinc-900 overflow-hidden bg-gray-200'>
+              <div className="relative">
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-zinc-900 overflow-hidden bg-gray-200">
                   <Image
                     width={35}
                     height={35}
-                    src='https://picsum.photos/200?random=41'
-                    alt='Profile'
-                    className='w-full h-full object-cover'
+                    src="https://picsum.photos/200?random=41"
+                    alt="Profile"
+                    className="w-full h-full object-cover"
                   />
                 </div>
-                <button className='absolute bottom-2 right-2 p-2 bg-gray-100 dark:bg-zinc-800 rounded-full hover:bg-gray-200 transition-colors border border-white dark:border-black'>
-                  <Camera className='w-4 h-4' />
+                <button className="absolute bottom-2 right-2 p-2 bg-gray-100 dark:bg-zinc-800 rounded-full hover:bg-gray-200 transition-colors border border-white dark:border-black">
+                  <Camera className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Name & Headline */}
-              <div className='flex-1 mt-2 md:mt-0 md:mb-4'>
-                <h1 className='text-2xl md:text-3xl font-bold text-gray-900 dark:text-white'>
+              <div className="flex-1 mt-2 md:mt-0 md:mb-0">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
                   {user?.firstName} {user?.lastName}
                 </h1>
-                <p className='text-gray-500 dark:text-gray-400 font-medium'>
+                <p className="text-gray-500 dark:text-gray-400 font-medium">
                   Web Designer & Developer • 0 followers
                 </p>
 
                 {/* Followers Thumbnails (Optional UI Candy) */}
-                <div className='flex items-center gap-1 mt-2'>
-                  <div className='flex -space-x-2 overflow-hidden'>
+                <div className="flex items-center gap-1 mt-2">
+                  <div className="flex -space-x-2 overflow-hidden">
                     {[1, 2, 3].map((i) => (
                       <Image
                         width={35}
                         height={35}
                         key={i}
-                        className='inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-zinc-900'
+                        className="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-zinc-900"
                         src={`https://picsum.photos/100?random=${i}`}
-                        alt=''
+                        alt=""
                       />
                     ))}
                   </div>
-                  <span className='text-xs text-gray-500 ml-2'>
+                  <span className="text-xs text-gray-500 ml-2">
                     Followed by DesignTeam + 1 others
                   </span>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className='flex items-center gap-3 mt-4 md:mt-0 md:mb-6 w-full md:w-auto'>
-                <button className='flex-1 md:flex-none px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2'>
-                  <PenSquare className='w-4 h-4' />
-                  Edit Profile
-                </button>
-                <button className='px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-colors'>
-                  <MoreHorizontal className='w-5 h-5' />
+              <div className="flex items-center gap-3 mt-4 md:mt-0 md:mb-6 w-full md:w-auto">
+                <div>
+                  {/* Button */}
+                  <button
+                    onClick={() => setOpen(true)}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center gap-2"
+                  >
+                    <PenSquare className="w-4 h-4" />
+                    Edit Profile
+                  </button>
+
+                  {/* Custom Popup */}
+                  <EditProfileModal open={open} onClose={() => setOpen(false)}>
+                    <h2 className="text-xl font-semibold mb-2">Edit Profile</h2>
+                    <p className="text-sm text-zinc-500 mb-4">
+                      Set the dimensions for the layer.
+                    </p>
+
+                    <div className="grid gap-2">
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <label>Width</label>
+                        <input
+                          defaultValue="100%"
+                          className="col-span-2 h-8 bg-zinc-100 dark:bg-zinc-800 rounded px-2"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <label>Max Width</label>
+                        <input
+                          defaultValue="300px"
+                          className="col-span-2 h-8 bg-zinc-100 dark:bg-zinc-800 rounded px-2"
+                        />
+                      </div>
+
+                      {/* ...your fields */}
+                    </div>
+                  </EditProfileModal>
+                </div>
+
+                <button className="px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-colors">
+                  <MoreHorizontal className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className='flex items-center gap-1 mt-8 border-t border-gray-200 dark:border-zinc-800 overflow-x-auto no-scrollbar'>
+            <div className="flex items-center gap-1 mt-8 border-t border-gray-200 dark:border-zinc-800 overflow-x-auto no-scrollbar">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+                    flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer
                     ${
                       activeTab === tab.id
                         ? "border-blue-600 text-blue-600 dark:text-blue-400"
@@ -135,7 +178,7 @@ export default function Profile() {
                     }
                   `}
                 >
-                  <tab.icon className='w-4 h-4' />
+                  <tab.icon className="w-4 h-4" />
                   {tab.label}
                 </button>
               ))}
@@ -145,40 +188,40 @@ export default function Profile() {
       </div>
 
       {/* 2. Main Content Grid */}
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* LEFT SIDEBAR (Intro, Photos, Friends) */}
-          <div className='space-y-6'>
+          <div className="space-y-6">
             {/* Intro Card */}
-            <div className='bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800'>
-              <h2 className='text-lg font-bold text-gray-900 dark:text-white mb-4'>
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                 Intro
               </h2>
-              <div className='space-y-4'>
-                <p className='text-sm text-center text-gray-600 dark:text-gray-300'>
+              <div className="space-y-4">
+                <p className="text-sm text-center text-gray-600 dark:text-gray-300">
                   Passionate about building beautiful user interfaces. 🎨 code
                   is poetry.
                 </p>
-                <div className='border-t border-gray-100 dark:border-zinc-800 my-4'></div>
+                <div className="border-t border-gray-100 dark:border-zinc-800 my-4"></div>
 
-                <div className='space-y-3'>
-                  <div className='flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300'>
-                    <MapPin className='w-5 h-5 text-gray-400' />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <MapPin className="w-5 h-5 text-gray-400" />
                     <span>
                       Lives in{" "}
-                      <strong className='text-gray-900 dark:text-white'>
+                      <strong className="text-gray-900 dark:text-white">
                         Dhaka, Bangladesh
                       </strong>
                     </span>
                   </div>
-                  <div className='flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300'>
-                    <LinkIcon className='w-5 h-5 text-gray-400' />
-                    <a href='#' className='text-blue-600 hover:underline'>
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <LinkIcon className="w-5 h-5 text-gray-400" />
+                    <a href="#" className="text-blue-600 hover:underline">
                       safayet.design
                     </a>
                   </div>
-                  <div className='flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300'>
-                    <Calendar className='w-5 h-5 text-gray-400' />
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <Calendar className="w-5 h-5 text-gray-400" />
                     <span>Joined October 2023</span>
                   </div>
                 </div>
@@ -186,27 +229,27 @@ export default function Profile() {
             </div>
 
             {/* Photos Preview Card */}
-            <div className='bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800'>
-              <div className='flex justify-between items-center mb-4'>
-                <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                   Photos
                 </h2>
-                <a href='#' className='text-sm text-blue-600 hover:underline'>
+                <a href="#" className="text-sm text-blue-600 hover:underline">
                   See all
                 </a>
               </div>
-              <div className='grid grid-cols-3 gap-2'>
+              <div className="grid grid-cols-3 gap-2">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
                   <div
                     key={i}
-                    className='aspect-square rounded-lg overflow-hidden bg-gray-100'
+                    className="aspect-square rounded-lg overflow-hidden bg-gray-100"
                   >
                     <Image
                       width={35}
                       height={35}
                       src={`https://picsum.photos/300?random=${i + 10}`}
-                      alt='Gallery'
-                      className='w-full h-full object-cover hover:scale-110 transition-transform duration-300'
+                      alt="Gallery"
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                     />
                   </div>
                 ))}
@@ -214,31 +257,31 @@ export default function Profile() {
             </div>
 
             {/* Friends Preview Card */}
-            <div className='bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800'>
-              <div className='flex justify-between items-center mb-4'>
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800">
+              <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                     Friends
                   </h2>
-                  <p className='text-xs text-gray-500'>1,245 friends</p>
+                  <p className="text-xs text-gray-500">1,245 friends</p>
                 </div>
-                <a href='#' className='text-sm text-blue-600 hover:underline'>
+                <a href="#" className="text-sm text-blue-600 hover:underline">
                   See all
                 </a>
               </div>
-              <div className='grid grid-cols-3 gap-4'>
+              <div className="grid grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className='text-center'>
-                    <div className='aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2'>
+                  <div key={i} className="text-center">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
                       <Image
                         width={35}
                         height={35}
                         src={`https://picsum.photos/200?random=${i + 50}`}
-                        alt='Friend'
-                        className='w-full h-full object-cover'
+                        alt="Friend"
+                        className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className='text-xs font-semibold text-gray-900 dark:text-white truncate'>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
                       Friend Name
                     </p>
                   </div>
@@ -248,36 +291,36 @@ export default function Profile() {
           </div>
 
           {/* RIGHT MAIN CONTENT (Feed) */}
-          <div className='lg:col-span-2 space-y-6'>
+          <div className="lg:col-span-2 space-y-6">
             {/* Create Post Input */}
-            <div className='bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-zinc-800'>
-              <div className='flex gap-4'>
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-zinc-800">
+              <div className="flex gap-4">
                 <Image
                   width={35}
                   height={35}
-                  src='https://picsum.photos/200?random=41'
-                  alt='Me'
-                  className='w-10 h-10 rounded-full object-cover'
+                  src="https://picsum.photos/200?random=41"
+                  alt="Me"
+                  className="w-10 h-10 rounded-full object-cover"
                 />
-                <div className='flex-1'>
+                <div className="flex-1">
                   <input
-                    type='text'
+                    type="text"
                     placeholder="What's on your mind, Safayet?"
-                    className='w-full h-10 px-4 bg-gray-100 dark:bg-zinc-800 rounded-full text-sm focus:outline-none hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors'
+                    className="w-full h-10 px-4 bg-gray-100 dark:bg-zinc-800 rounded-full text-sm focus:outline-none hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
                   />
                 </div>
               </div>
-              <div className='flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800'>
-                <div className='flex gap-2'>
-                  <button className='flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors'>
-                    <Video className='w-5 h-5 text-red-500' />
-                    <span className='text-sm font-medium text-gray-600 dark:text-gray-300'>
+              <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800">
+                <div className="flex gap-2">
+                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                    <Video className="w-5 h-5 text-red-500" />
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                       Live Video
                     </span>
                   </button>
-                  <button className='flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors'>
-                    <ImageIcon className='w-5 h-5 text-green-500' />
-                    <span className='text-sm font-medium text-gray-600 dark:text-gray-300'>
+                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                    <ImageIcon className="w-5 h-5 text-green-500" />
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                       Photo/Video
                     </span>
                   </button>
