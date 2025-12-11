@@ -1,7 +1,11 @@
 "use client";
+
 import { createUser } from "@/lib/api/user/user";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 enum GenderEnum {
   male = "male",
@@ -13,7 +17,7 @@ interface IFormInput {
   firstName: string;
   lastName: string;
   gender: GenderEnum;
-  phone: number;
+  phone: string; // Use string to avoid number loss
   password: string;
 }
 
@@ -24,96 +28,96 @@ export default function Register() {
     formState: { errors },
   } = useForm<IFormInput>();
 
-  // const onSubmit: SubmitHandler<IFormInput> = (data) => console.log(data);
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const onSubmit: SubmitHandler<IFormInput> = async (data) => {
-    const payload = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      password: data.password,
-      phone: data.phone,
-      gender: data.gender,
-    };
+    setLoading(true);
 
     try {
-      const response = await createUser(payload);
-      console.log("User Created:", response);
-    } catch (err: any) {
-      console.log("Error:", err.message);
+      await createUser(data);
+      toast.success("Account created successfully!");
+      router.push("/login");
+    } catch (error: any) {
+      toast.error(error?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
+
+  // 🔹 Reusable Form Field Component
+  const FormField = ({
+    label,
+    children,
+    error,
+  }: {
+    label: string;
+    children: React.ReactNode;
+    error?: string;
+  }) => (
+    <div className="space-y-1">
+      <label className="text-sm font-semibold text-gray-700 block">
+        {label}
+      </label>
+      {children}
+      {error && <p className="text-red-500 text-xs">{error}</p>}
+    </div>
+  );
+
   return (
-    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 p-4'>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 p-6">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className='w-full max-w-md backdrop-blur-xl bg-white/40 shadow-2xl border border-white/30 rounded-3xl p-10 space-y-6 transition-all'
+        className="w-full max-w-md bg-white/50 backdrop-blur-xl border border-white/30 shadow-xl rounded-3xl p-8 space-y-6"
       >
         {/* Header */}
-        <h2 className='text-3xl font-extrabold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
-          Create an Account
-        </h2>
-        <p className='text-center text-gray-600 text-sm'>
-          Join our platform in just a minute ✨
-        </p>
+        <div className="text-center mb-2">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Create an Account
+          </h2>
+          <p className="text-gray-600 text-sm">
+            Join our platform in just a minute ✨
+          </p>
+        </div>
 
-        {/* Input group */}
-        {/** First Name */}
-        <div className='space-y-1 flex justify-center items-center'>
-          <label className='text-sm font-semibold text-gray-700 whitespace-nowrap pr-2'>
-            First Name :{" "}
-          </label>
+        {/* First Name */}
+        <FormField label="First Name" error={errors.firstName?.message}>
           <input
             {...register("firstName", {
               required: "First name is required",
-              minLength: { value: 2, message: "Minimum 2 characters required" },
+              minLength: { value: 2, message: "At least 2 characters" },
             })}
-            className='p-3 rounded-xl bg-white/40 border border-gray-300 focus:ring-4 focus:ring-blue-400/40 focus:outline-none transition-all w-full'
-            placeholder='Enter first name'
+            className="w-full p-3 rounded-xl bg-white/70 border border-gray-300 focus:ring-4 focus:ring-blue-300/40 outline-none"
+            placeholder="Enter first name"
           />
-          {errors.firstName && (
-            <p className='text-red-500 text-xs'>{errors.firstName.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        {/** Last Name */}
-        <div className='space-y-1 flex justify-center items-center'>
-          <label className='text-sm font-semibold text-gray-700 whitespace-nowrap pr-2'>
-            Last Name :{" "}
-          </label>
+        {/* Last Name */}
+        <FormField label="Last Name" error={errors.lastName?.message}>
           <input
-            {...register("lastName", { required: "Last name is required" })}
-            className='p-3 rounded-xl bg-white/40 border border-gray-300 focus:ring-4 focus:ring-blue-400/40 focus:outline-none transition-all w-full'
-            placeholder='Enter last name'
+            {...register("lastName", {
+              required: "Last name is required",
+            })}
+            className="w-full p-3 rounded-xl bg-white/70 border border-gray-300 focus:ring-4 focus:ring-blue-300/40 outline-none"
+            placeholder="Enter last name"
           />
-          {errors.lastName && (
-            <p className='text-red-500 text-xs'>{errors.lastName.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        {/** Gender */}
-        <div className='space-y-1 flex justify-center items-center'>
-          <label className='text-sm font-semibold text-gray-700 whitespace-nowrap pr-2'>
-            Gender :{" "}
-          </label>
+        {/* Gender */}
+        <FormField label="Gender" error={errors.gender?.message}>
           <select
             {...register("gender", { required: "Gender is required" })}
-            className='p-3 rounded-xl bg-white/40 border border-gray-300 focus:ring-4 focus:ring-blue-400/40 focus:outline-none transition-all w-full'
+            className="w-full p-3 rounded-xl bg-white/70 border border-gray-300 focus:ring-4 focus:ring-blue-300/40 outline-none"
           >
-            <option value=''>Choose gender...</option>
-            <option value='male'>Male</option>
-            <option value='female'>Female</option>
-            <option value='other'>Other</option>
+            <option value="">Choose gender...</option>
+            <option value={GenderEnum.male}>Male</option>
+            <option value={GenderEnum.female}>Female</option>
+            <option value={GenderEnum.other}>Other</option>
           </select>
-          {errors.gender && (
-            <p className='text-red-500 text-xs'>{errors.gender.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        {/** Phone */}
-        <div className='space-y-1 flex justify-center items-center'>
-          <label className='text-sm font-semibold text-gray-700 whitespace-nowrap pr-2 '>
-            Phone :{" "}
-          </label>
+        {/* Phone */}
+        <FormField label="Phone" error={errors.phone?.message}>
           <input
             {...register("phone", {
               required: "Phone number is required",
@@ -122,54 +126,45 @@ export default function Register() {
                 message: "Phone must be 11 digits",
               },
             })}
-            className='p-3 rounded-xl bg-white/40 border border-gray-300 focus:ring-4 focus:ring-blue-400/40 focus:outline-none transition-all w-full'
-            placeholder='01XXXXXXXXX'
+            className="w-full p-3 rounded-xl bg-white/70 border border-gray-300 focus:ring-4 focus:ring-blue-300/40 outline-none"
+            placeholder="01XXXXXXXXX"
           />
-          {errors.phone && (
-            <p className='text-red-500 text-xs'>{errors.phone.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        {/** Password */}
-        <div className='space-y-1 flex justify-center items-center'>
-          <label className='text-sm font-semibold text-gray-700 whitespace-nowrap pr-2'>
-            Password :{" "}
-          </label>
+        {/* Password */}
+        <FormField label="Password" error={errors.password?.message}>
           <input
-            type='password'
+            type="password"
             {...register("password", {
               required: "Password is required",
-              minLength: {
-                value: 6,
-                message: "At least 6 characters",
-              },
+              minLength: { value: 6, message: "At least 6 characters" },
               pattern: {
                 value: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/,
                 message: "Must include letters & numbers",
               },
             })}
-            className='p-3 rounded-xl bg-white/40 border border-gray-300 focus:ring-4 focus:ring-blue-400/40 focus:outline-none transition-all w-full'
-            placeholder='Enter password'
+            className="w-full p-3 rounded-xl bg-white/70 border border-gray-300 focus:ring-4 focus:ring-blue-300/40 outline-none"
+            placeholder="Enter password"
           />
-          {errors.password && (
-            <p className='text-red-500 text-xs'>{errors.password.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        {/* Login link */}
-        <p className='text-center text-gray-700 text-sm'>
+        {/* Login Link */}
+        <p className="text-center text-gray-700 text-sm">
           Already have an account?{" "}
-          <Link href='/login' className='text-blue-700 font-semibold underline'>
+          <Link href="/login" className="text-blue-700 underline font-semibold">
             Login
           </Link>
         </p>
 
         {/* Submit Button */}
         <button
-          type='submit'
-          className='w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white font-bold shadow-lg transition-all'
+          disabled={loading}
+          type="submit"
+          className={`w-full py-3 rounded-xl text-white font-bold shadow-lg transition-all bg-gradient-to-r 
+            from-blue-600 to-purple-600 
+            ${loading ? "opacity-70 cursor-not-allowed" : "hover:opacity-90"}`}
         >
-          Create Account
+          {loading ? "Creating..." : "Create Account"}
         </button>
       </form>
     </div>
