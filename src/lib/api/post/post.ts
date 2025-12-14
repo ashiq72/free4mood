@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 
 export const createPost = async (formData: FormData) => {
   try {
-    const token = cookies().get("accessToken")?.value;
+    const cookieStore = await cookies(); // ✅ await added
+    const token = cookieStore.get("accessToken")?.value;
 
     if (!token) {
       throw new Error("Access token not found");
@@ -16,7 +17,7 @@ export const createPost = async (formData: FormData) => {
         method: "POST",
         body: formData,
         headers: {
-          Authorization: `Bearer ${token}`, // ✅ Bearer added
+          Authorization: `Bearer ${token}`, // ✅ correct
         },
       }
     );
@@ -34,7 +35,7 @@ export const createPost = async (formData: FormData) => {
 
 export const getAllPosts = async () => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/`, {
-    cache: "no-store", // optional but good for SSR
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -43,5 +44,3 @@ export const getAllPosts = async () => {
 
   return response.json();
 };
-
-// Bearer
