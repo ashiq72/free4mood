@@ -65,16 +65,13 @@ export const CreatePostBox = () => {
   };
 
   return (
-    // open={open} onOpenChange={setOpen}
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div
           onClick={() => {
             if (!user) {
               window.location.href = "/login";
               return;
-            } else {
-              setOpen(true);
             }
           }}
           className="flex items-center gap-3 bg-white dark:bg-zinc-900 border rounded-2xl p-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"

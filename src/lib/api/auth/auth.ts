@@ -5,14 +5,17 @@ import { FieldValues } from "react-hook-form";
 
 export const loginUser = async (payload: FieldValues) => {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_CORE_URL}/auth/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      }
+    );
 
     const data = await res.json();
     if (data.success) {
