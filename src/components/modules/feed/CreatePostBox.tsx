@@ -10,7 +10,7 @@ import { ImageIcon, Smile, Video } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { createPost } from "@/lib/api/post";
+import { createPost } from "@/lib/api/post/post";
 import { useUser } from "@/context/UserContext";
 
 export const CreatePostBox = () => {
