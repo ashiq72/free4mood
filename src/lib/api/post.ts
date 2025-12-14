@@ -1,6 +1,3 @@
-// No need PostData interface anymore
-// We are using FormData for file + text upload
-
 export const createPost = async (formData: FormData) => {
   try {
     const response = await fetch(
