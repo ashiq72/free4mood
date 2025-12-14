@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getAllPosts } from "@/lib/api/post";
+import { getAllPosts } from "@/lib/api/post/post";
 import { PostCard } from "./PostCard";
 import { FeedSkeleton } from "@/components/shared/FeedSkeleton";
 
