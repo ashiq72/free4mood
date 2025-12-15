@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-
+const tenantId = "free4mood";
 export const createPost = async (formData: FormData) => {
   try {
     const cookieStore = await cookies(); // ✅ await added
@@ -17,7 +17,8 @@ export const createPost = async (formData: FormData) => {
         method: "POST",
         body: formData,
         headers: {
-          Authorization: `Bearer ${token}`, // ✅ correct
+          Authorization: `Bearer ${token}`,
+          "x-tenant-id": tenantId,
         },
       }
     );
