@@ -1,8 +1,7 @@
 export interface IUser {
   userId: string;
   isActive?: boolean;
-  firstName: string;
-  lastName: string;
+  name: string;
   gender: string;
   phone: string;
   iat?: number;

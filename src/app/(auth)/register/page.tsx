@@ -14,8 +14,7 @@ enum GenderEnum {
 }
 
 interface IFormInput {
-  firstName: string;
-  lastName: string;
+  name: string;
   gender: GenderEnum;
   phone: string;
   password: string;
@@ -81,25 +80,14 @@ export default function Register() {
         </div>
 
         {/* First Name */}
-        <FormField label="First Name" error={errors.firstName?.message}>
+        <FormField label="Full Name" error={errors.name?.message}>
           <input
-            {...register("firstName", {
-              required: "First name is required",
+            {...register("name", {
+              required: "Full name is required",
               minLength: { value: 2, message: "At least 2 characters" },
             })}
             className="w-full p-3 rounded-xl bg-white/70 border border-gray-300 focus:ring-4 focus:ring-blue-300/40 outline-none"
-            placeholder="Enter first name"
-          />
-        </FormField>
-
-        {/* Last Name */}
-        <FormField label="Last Name" error={errors.lastName?.message}>
-          <input
-            {...register("lastName", {
-              required: "Last name is required",
-            })}
-            className="w-full p-3 rounded-xl bg-white/70 border border-gray-300 focus:ring-4 focus:ring-blue-300/40 outline-none"
-            placeholder="Enter last name"
+            placeholder="Enter full name"
           />
         </FormField>
 
