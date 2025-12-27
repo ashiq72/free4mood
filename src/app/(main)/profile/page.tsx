@@ -120,7 +120,7 @@ export default function Profile() {
               {/* Name & Headline */}
               <div className="flex-1 mt-2 md:mt-0 md:mb-0">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                  {user?.firstName} {user?.lastName}
+                  {user?.name}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 font-medium">
                   Web Designer & Developer • 0 followers
@@ -410,7 +410,7 @@ export default function Profile() {
 //           />
 //           <div>
 //             <h3 className='font-semibold text-gray-900 dark:text-white text-sm'>
-//               {user?.firstName} {user?.lastName}
+//               {user?.name}
 //             </h3>
 //             <p className='text-xs text-gray-500'>{time}</p>
 //           </div>

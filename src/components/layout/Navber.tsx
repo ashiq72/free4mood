@@ -171,7 +171,7 @@ export default function Navbar() {
                       className="rounded-full object-cover ring-2 ring-white dark:ring-black"
                     />
                     <span className="hidden lg:block text-xs font-semibold text-gray-700 dark:text-gray-200">
-                      {user?.firstName} {user?.lastName}
+                      {user?.name}
                     </span>
                   </button>
 
@@ -188,7 +188,7 @@ export default function Navbar() {
                         />
                         <div>
                           <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                            {user?.firstName} {user?.lastName}
+                            {user?.name}
                           </p>
                           <p className="text-xs text-gray-500">
                             View your profile

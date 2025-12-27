@@ -35,7 +35,7 @@ export const CreatePostBox = () => {
     setLoading(true);
 
     try {
-      const title = `${user?.firstName} ${user?.lastName}`;
+      const title = `${user?.name}`;
 
       // ⭐ MUST USE FormData for image upload
       const formData = new FormData();
