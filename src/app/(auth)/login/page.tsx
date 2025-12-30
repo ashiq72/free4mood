@@ -112,7 +112,7 @@ export default function Login() {
           disabled={loading}
           className={`w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 
           text-white font-bold shadow-lg transition-all flex items-center justify-center
-          ${loading ? "opacity-70 cursor-not-allowed" : "hover:opacity-90"}`}
+          ${loading ? "opacity-70 cursor-not-allowed" : "hover:opacity-90 cursor-pointer"}`}
         >
           {loading ? (
             <div className="flex items-center space-x-2">

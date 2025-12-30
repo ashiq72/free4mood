@@ -39,7 +39,7 @@ export const PostCard = ({
             </div>
           </div>
         </div>
-        <button className='p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-gray-500'>
+        <button className='p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-gray-500 cursor-pointer'>
           <MoreHorizontal className='w-5 h-5' />
         </button>
       </div>
@@ -78,10 +78,10 @@ export const PostCard = ({
         </div>
       </div>
 
-      <div className='px-2 py-1 flex items-center justify-between'>
-        <ActionButton icon={Heart} label='Like' />
-        <ActionButton icon={MessageCircle} label='Comment' />
-        <ActionButton icon={Share2} label='Share' />
+      <div className='px-2 py-1 flex items-center justify-between cursor-pointer'>
+        <ActionButton icon={Heart} label='Like' className='cursor-pointer' />
+        <ActionButton className='cursor-pointer' icon={MessageCircle} label='Comment' />
+        <ActionButton className='cursor-pointer' icon={Share2} label='Share' />
       </div>
     </div>
   );
