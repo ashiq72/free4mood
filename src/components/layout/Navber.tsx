@@ -143,7 +143,7 @@ export default function Navbar() {
                 <NavItem icon={Home} href="/" active />
                 <NavItem icon={Users} href="/friends" />
                 <NavItem icon={Tv} href="/watch" />
-                <NavItem icon={PlusSquare} href="/create" />
+                {/* <NavItem icon={PlusSquare} href="/create" /> */}
               </div>
             </div>
 
