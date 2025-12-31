@@ -25,17 +25,17 @@ export const loginUser = async (payload: FieldValues) => {
       throw new Error(data.message || "Login failed!");
     }
     return data;
-  } catch (error: any) {
-    throw new Error(error.message || "Something went wrong");
+  } catch (error: Error | unknown) {
+    throw new Error(error instanceof Error ? error.message : "Something went wrong");
   }
 };
 
 export const getCurrentUser = async () => {
   const accessToken = (await cookies()).get("accessToken")?.value;
-  let decodedData = null;
+  let decodedData: Record<string, unknown> | null = null;
 
   if (accessToken) {
-    decodedData = (await jwtDecode(accessToken)) as any;
+    decodedData = jwtDecode(accessToken);
 
     return decodedData;
   } else {

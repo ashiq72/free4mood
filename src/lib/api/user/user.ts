@@ -1,4 +1,4 @@
-export async function createUser(payload: any) {
+export async function createUser(payload: Record<string, unknown>) {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/user-info/create-user-info`,
@@ -23,7 +23,7 @@ export async function createUser(payload: any) {
     }
 
     return data;
-  } catch (error: any) {
-    throw new Error(error.message || "Something went wrong");
+  } catch (error: Error | unknown) {
+    throw new Error(error instanceof Error ? error.message : "Something went wrong");
   }
 }
