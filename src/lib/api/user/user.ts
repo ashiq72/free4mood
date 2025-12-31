@@ -1,7 +1,7 @@
 export async function createUser(payload: any) {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_CORE_URL}/users/create-user`,
+      `${process.env.NEXT_PUBLIC_API_URL}/user-info/create-user-info`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
