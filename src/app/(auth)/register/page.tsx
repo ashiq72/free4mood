@@ -150,7 +150,7 @@ export default function Register() {
           type="submit"
           className={`w-full py-3 rounded-xl text-white font-bold shadow-lg transition-all bg-gradient-to-r 
             from-blue-600 to-purple-600 
-            ${loading ? "opacity-70 cursor-not-allowed" : "hover:opacity-90"}`}
+            ${loading ? "opacity-70 cursor-not-allowed" : "hover:opacity-90 cursor-pointer"}`}
         >
           {loading ? "Creating..." : "Create Account"}
         </button>
