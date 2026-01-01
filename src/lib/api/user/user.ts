@@ -42,3 +42,29 @@ export const getMe = async () => {
 
   return res.json();
 };
+
+// lib/api/user/user.ts
+export const updateUser = async (data: {
+  bio: string;
+  about: string;
+  location: string;
+  website: string;
+  date: string;
+}) => {
+  const res = await fetch("/api/userinfo", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(result.message || "Failed to update user info");
+  }
+
+  return result;
+};
+

@@ -16,6 +16,7 @@ interface TabItem {
 }
 interface IUserInfo {
   name: string;
+  about: string;
   bio: string;
   title: string;
   description: string;
@@ -24,11 +25,12 @@ interface IUserInfo {
 interface ProfileHeaderProps {
   userInfo: IUserInfo | null;
   loading: boolean;
+  loadUser:  () => void;
 }
 
 
 
-export const ProfileHeader = ({ userInfo, loading }: ProfileHeaderProps) => {
+export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProps) => {
 
 
   const [activeTab, setActiveTab] = useState("posts");
@@ -165,30 +167,10 @@ export const ProfileHeader = ({ userInfo, loading }: ProfileHeaderProps) => {
                   <EditProfileFullModal
                     openFullModal={openFullModal}
                     onClose={() => setOpenFullModal(false)}
+                    loadUser={loadUser}
+                    
                   >
-                    <h2 className="text-xl font-semibold mb-2">Edit Profile</h2>
-                    <p className="text-sm text-zinc-500 mb-4">
-                      Set the dimensions for the layer.
-                    </p>
-
-                    <div className="grid gap-2">
-                      <div className="grid grid-cols-3 items-center gap-4">
-                        <label>Width</label>
-                        <input
-                          defaultValue="100%"
-                          className="col-span-2 h-8 bg-zinc-100 dark:bg-zinc-800 rounded px-2"
-                        />
-                      </div>
-                      <div className="grid grid-cols-3 items-center gap-4">
-                        <label>Max Width</label>
-                        <input
-                          defaultValue="300px"
-                          className="col-span-2 h-8 bg-zinc-100 dark:bg-zinc-800 rounded px-2"
-                        />
-                      </div>
-
-                      {/* ...your fields */}
-                    </div>
+                    
                   </EditProfileFullModal>
                 </div>
 
