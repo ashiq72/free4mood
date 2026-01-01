@@ -1,3 +1,5 @@
+
+
 export async function createUser(payload: Record<string, unknown>) {
   try {
     const res = await fetch(
@@ -27,3 +29,16 @@ export async function createUser(payload: Record<string, unknown>) {
     throw new Error(error instanceof Error ? error.message : "Something went wrong");
   }
 }
+
+
+export const getMe = async () => {
+  const res = await fetch("/api/me", {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch user");
+  }
+
+  return res.json();
+};
