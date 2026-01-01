@@ -3,12 +3,18 @@
 import { Button } from "@/components/ui/button";
 import { updateUser } from "@/lib/api/user/user";
 import { useEffect, useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { IUserInfo } from "@/types/TProfile";
 
 /* ---------------- Types ---------------- */
+
+
 interface EditProfileFullModalProps {
   openFullModal: boolean;
   onClose: () => void;
-  loadUser: () => void
+  loadUser: () => void;
+  userInfo: IUserInfo | null;
 }
 
 interface FormDataType {
@@ -16,7 +22,7 @@ interface FormDataType {
   about: string;
   location: string;
   website: string;
-  date: string;
+  dateOfBirth: string;
 }
 
 /* ---------------- Helper ---------------- */
@@ -27,19 +33,34 @@ const sleep = (ms: number) =>
 export default function EditProfileFullModal({
   openFullModal,
   onClose,
-  loadUser
-
+  loadUser,
+  userInfo,
 }: EditProfileFullModalProps) {
   const [formData, setFormData] = useState<FormDataType>({
     bio: "",
     about: "",
     location: "",
     website: "",
-    date: "",
+    dateOfBirth: "",
   });
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /* ✅ Prefill form when modal opens */
+  useEffect(() => {
+    if (openFullModal && userInfo) {
+      setFormData({
+        bio: userInfo.bio || "",
+        about: userInfo.about || "",
+        location: userInfo.location || "",
+        website: userInfo.website || "",
+         dateOfBirth: userInfo.dateOfBirth
+        ? userInfo.dateOfBirth.slice(0, 10) // ✅ important
+        : "",
+      });
+    }
+  }, [openFullModal, userInfo]);
 
   /* Close on ESC */
   useEffect(() => {
@@ -60,7 +81,7 @@ export default function EditProfileFullModal({
 
   if (!openFullModal) return null;
 
-  /* Handle change */
+  /* Handle input change */
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -74,28 +95,25 @@ export default function EditProfileFullModal({
       setSaving(true);
       setError(null);
 
-      await updateUser({
-        bio: formData.bio,
-        about: formData.about,
-        location: formData.location,
-        website: formData.website,
-        date: formData.date,
-      });
+      await updateUser(formData);
 
-      // ⏳ keep saving state for 2 seconds
-      await sleep(2000);
-loadUser();
+      await sleep(800); // small UX delay
+      await loadUser(); // 🔥 refresh profile data
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "Something went wrong");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Something went wrong");
+      }
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-9999 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl animate-in fade-in zoom-in-95">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
@@ -103,7 +121,7 @@ loadUser();
           <button
             onClick={onClose}
             disabled={saving}
-            className="text-zinc-500 hover:text-zinc-800 dark:hover:text-white"
+            className="cursor-pointer text-zinc-500 hover:text-zinc-800 dark:hover:text-white"
           >
             ✕
           </button>
@@ -112,56 +130,50 @@ loadUser();
         {/* Form */}
         <div className="px-6 py-5 space-y-4">
           <Field label="Bio">
-            <textarea
+            <Input
               name="bio"
-              rows={2}
               value={formData.bio}
               onChange={handleChange}
-              className="input"
               placeholder="Short bio"
             />
           </Field>
 
           <Field label="About">
-            <textarea
+            <Textarea
               name="about"
               rows={3}
               value={formData.about}
               onChange={handleChange}
-              className="input"
               placeholder="Tell something about yourself"
             />
           </Field>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Location">
-              <input
+              <Input
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                className="input"
                 placeholder="City, Country"
               />
             </Field>
 
             <Field label="Website">
-              <input
+              <Input
                 name="website"
                 value={formData.website}
                 onChange={handleChange}
-                className="input"
                 placeholder="https://example.com"
               />
             </Field>
           </div>
 
           <Field label="Birthday">
-            <input
+            <Input
               type="date"
-              name="date"
-              value={formData.date}
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
               onChange={handleChange}
-              className="input"
             />
           </Field>
         </div>
@@ -177,11 +189,11 @@ loadUser();
 
         {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-zinc-200 dark:border-zinc-800">
-          <Button className=" cursor-pointer" variant="ghost" onClick={onClose} disabled={saving}>
+          <Button variant="ghost" className="cursor-pointer" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button className="cursor-pointer" onClick={handleSubmit} disabled={saving}>
-            {saving ? "Saving..." : (<span >Save Changes</span>)}
+          <Button className="bg-indigo-700 cursor-pointer hover:bg-indigo-600" onClick={handleSubmit} disabled={saving}>
+            {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </div>
@@ -193,17 +205,27 @@ loadUser();
 function Field({
   label,
   children,
+  error,
+  helper,
 }: {
   label: string;
   children: React.ReactNode;
+  error?: string;
+  helper?: string;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+    <div className="w-full space-y-1.5 sm:space-y-2">
+      <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300">
         {label}
       </label>
+
       {children}
+
+      {helper && !error && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">{helper}</p>
+      )}
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
 }
-                

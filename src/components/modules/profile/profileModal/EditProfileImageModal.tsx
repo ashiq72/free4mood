@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
+
+interface EditProfileImageModalProps {
+  openImageModal: boolean;
+  onClose: () => void;
+  children: ReactNode;
+}
 
 export default function EditProfileImageModal({
   openImageModal,
   onClose,
   children,
-}: any) {
+}: EditProfileImageModalProps) {
   // Close on ESC key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -33,7 +39,7 @@ export default function EditProfileImageModal({
   if (!openImageModal) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-9999">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-[95%] sm:w-[420px] md:w-[650px] shadow-2xl relative animate-in fade-in zoom-in-50">
         {/* Close button */}
         <button

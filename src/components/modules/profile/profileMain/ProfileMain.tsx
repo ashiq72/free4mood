@@ -1,15 +1,10 @@
+import { IUserInfo } from "@/types/TProfile";
 import { FriendsPreview } from "./FriendsPreview"
-import { IntroCard } from "./IntroCard"
+import { IntroCard } from "./IntroCard";
+
 import { PhotosGrid } from "./PhotosGrid"
 import { ProfileFeed } from "./ProfileFeed"
-interface IUserInfo {
-  name: string;
-  bio: string;
-  about: string;
-  title: string;
-  description: string;
-  image?: string;
-}
+
 interface ProfileHeaderProps {
   userInfo: IUserInfo | null;
   loading: boolean;
@@ -25,7 +20,7 @@ export const ProfileMain = ({ userInfo, loading }: ProfileHeaderProps) => {
           <div className="space-y-6">
             {/* Intro Card */}
          
-          <IntroCard userInfo={userInfo} />
+          <IntroCard userInfo={userInfo} loading={loading} />
             {/* Photos Preview Card */}
           <PhotosGrid />
 

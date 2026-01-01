@@ -2,8 +2,9 @@
 import EditProfileCoverModal from '@/components/modules/profile/profileModal/EditProfileCoverModal';
 import EditProfileFullModal from '@/components/modules/profile/profileModal/EditProfileFullModal';
 import EditProfileImageModal from '@/components/modules/profile/profileModal/EditProfileImageModal';
+import { IUserInfo } from '@/types/TProfile';
 
-import { Camera, Grid, ImageIcon, MoreHorizontal, PenSquare, Users, Video } from 'lucide-react';
+import { Camera, Grid, ImageIcon, LucideIcon, MoreHorizontal, PenSquare, Users, Video } from 'lucide-react';
 import Image from 'next/image'
 import { useState } from 'react';
 
@@ -12,16 +13,9 @@ import { useState } from 'react';
 interface TabItem {
   id: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
 }
-interface IUserInfo {
-  name: string;
-  about: string;
-  bio: string;
-  title: string;
-  description: string;
-  image?: string;
-}
+
 interface ProfileHeaderProps {
   userInfo: IUserInfo | null;
   loading: boolean;
@@ -31,6 +25,7 @@ interface ProfileHeaderProps {
 
 
 export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProps) => {
+
 
 
   const [activeTab, setActiveTab] = useState("posts");
@@ -168,7 +163,7 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
                     openFullModal={openFullModal}
                     onClose={() => setOpenFullModal(false)}
                     loadUser={loadUser}
-                    
+                    userInfo={userInfo}
                   >
                     
                   </EditProfileFullModal>

@@ -3,15 +3,9 @@
 import { ProfileHeader } from "@/components/modules/profile/profileMain/ProfileHeader";
 import { ProfileMain } from "@/components/modules/profile/profileMain/ProfileMain";
 import { getMe } from "@/lib/api/user/user";
+import { IUserInfo } from "@/types/TProfile";
 import { useEffect, useState } from "react";
 
-interface IUserInfo {
-  name: string;
-  bio: string;
-  title: string;
-  description: string;
-  image?: string;
-}
 
 export default function Profile() {
   const [userInfo, setUserInfo] = useState<IUserInfo | null>(null);

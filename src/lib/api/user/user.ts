@@ -49,7 +49,7 @@ export const updateUser = async (data: {
   about: string;
   location: string;
   website: string;
-  date: string;
+  dateOfBirth: string;
 }) => {
   const res = await fetch("/api/userinfo", {
     method: "PATCH",
