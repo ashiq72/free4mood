@@ -1,72 +1,90 @@
 "use client";
 
-import { useEffect, ReactNode } from "react";
+import { useState } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { updateUser } from "@/lib/api/user/user";
 
-interface EditProfileImageModalProps {
+interface Props {
   openImageModal: boolean;
   onClose: () => void;
-  children: ReactNode;
+  loadUser: () => void;
 }
 
 export default function EditProfileImageModal({
   openImageModal,
   onClose,
-  children,
-}: EditProfileImageModalProps) {
-  // Close on ESC key
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
-
-  // ❗ Freeze body scroll when modal is openImageModal
-  useEffect(() => {
-    if (openImageModal) {
-      document.body.style.overflow = "hidden"; // disable scroll
-    } else {
-      document.body.style.overflow = "auto"; // enable scroll
-    }
-
-    // On unmount
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [openImageModal]);
+  loadUser,
+}: Props) {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!openImageModal) return null;
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
+    setError(null);
+  };
+
+  const handleSave = async () => {
+    if (!file) {
+      setError("Please select an image");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append("file", file); // ✅ FIXED
+
+      await updateUser(formData);
+      await loadUser();
+      onClose();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update profile image";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-9999">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-[95%] sm:w-[420px] md:w-[650px] shadow-2xl relative animate-in fade-in zoom-in-50">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-zinc-500 hover:text-zinc-800 dark:hover:text-white cursor-pointer"
-        >
-          ✕
-        </button>
+    <div className="fixed inset-0 z-9999 bg-black/50 flex items-center justify-center">
+      <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl w-[400px]">
+        <h2 className="text-lg font-semibold mb-4">Update Profile Photo</h2>
 
-        {children}
-        <div className="grid gap-2">
-          <div className="grid grid-cols-3 items-center gap-4">
-            <label>Width</label>
-            <input
-              defaultValue="100%"
-              className="col-span-2 h-8 bg-zinc-100 dark:bg-zinc-800 rounded px-2"
-            />
-          </div>
-          {/* <div className="grid grid-cols-3 items-center gap-4">
-            <label>Max Width</label>
-            <input
-              defaultValue="300px"
-              className="col-span-2 h-8 bg-zinc-100 dark:bg-zinc-800 rounded px-2"
-            />
-          </div> */}
+        {preview && (
+          <Image
+            src={preview}
+            width={200}
+            height={200}
+            alt="Preview"
+            className="rounded-full mx-auto mb-4"
+          />
+        )}
 
-          {/* ...your fields */}
+        <input type="file" accept="image/*" onChange={handleFileChange} />
+
+        {/* ✅ ERROR MESSAGE */}
+        {error && (
+          <p className="text-red-500 text-sm mt-2">{error}</p>
+        )}
+
+        <div className="flex justify-end gap-3 mt-4">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={loading}>
+            {loading ? "Saving..." : "Save"}
+          </Button>
         </div>
       </div>
     </div>

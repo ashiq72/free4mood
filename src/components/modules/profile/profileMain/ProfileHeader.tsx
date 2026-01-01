@@ -86,7 +86,7 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
                   <Image
                     width={35}
                     height={35}
-                    src="https://picsum.photos/200?random=41"
+                    src={userInfo?.image || "https://via.placeholder.com/160"}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -103,12 +103,8 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
                   <EditProfileImageModal
                     openImageModal={openImageModal}
                     onClose={() => setOpenImageModal(false)}
-                  >
-                    <h2 className="text-xl font-semibold mb-2 cursor-pointer">Edit Profile</h2>
-                    <p className="text-sm text-zinc-500 mb-4">
-                      Set the dimensions for the layer.
-                    </p>
-                  </EditProfileImageModal>
+                    loadUser={loadUser}  
+                  />
                 </div>
               </div>
 
