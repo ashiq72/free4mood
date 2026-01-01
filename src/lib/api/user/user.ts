@@ -1,6 +1,7 @@
+import { IFormInput } from "@/types/auth";
 
 
-export async function createUser(payload: Record<string, unknown>) {
+export async function createUser(payload: IFormInput) {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/user-info/create-user-info`,
@@ -11,22 +12,19 @@ export async function createUser(payload: Record<string, unknown>) {
       }
     );
 
-    let data;
-
-    try {
-      // Try to parse JSON safely
-      data = await res.json();
-    } catch {
+    const data = await res.json().catch(() => {
       throw new Error("Server returned invalid JSON");
-    }
+    });
 
     if (!res.ok) {
       throw new Error(data.message || "Failed to create user");
     }
 
     return data;
-  } catch (error: Error | unknown) {
-    throw new Error(error instanceof Error ? error.message : "Something went wrong");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : "Something went wrong"
+    );
   }
 }
 
