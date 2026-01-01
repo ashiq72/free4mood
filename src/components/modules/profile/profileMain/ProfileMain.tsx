@@ -5,6 +5,7 @@ import { ProfileFeed } from "./ProfileFeed"
 interface IUserInfo {
   name: string;
   bio: string;
+  about: string;
   title: string;
   description: string;
   image?: string;
@@ -24,7 +25,7 @@ export const ProfileMain = ({ userInfo, loading }: ProfileHeaderProps) => {
           <div className="space-y-6">
             {/* Intro Card */}
          
-          <IntroCard />
+          <IntroCard userInfo={userInfo} />
             {/* Photos Preview Card */}
           <PhotosGrid />
 

@@ -1,6 +1,18 @@
 import { Calendar, LinkIcon, MapPin } from "lucide-react"
+interface IUserInfo {
+  name: string;
+  bio: string;
+  about: string;
+  title: string;
+  description: string;
+  image?: string;
+}
+interface ProfileHeaderProps {
+  userInfo: IUserInfo | null;
+  loading: boolean;
+}
 
-export const IntroCard = () => {
+export const IntroCard = ({ userInfo, loading }: ProfileHeaderProps) => {
   return (
     <div>
            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800">
@@ -9,8 +21,7 @@ export const IntroCard = () => {
                       </h2>
                       <div className="space-y-4">
                         <p className="text-sm text-center text-gray-600 dark:text-gray-300">
-                          Passionate about building beautiful user interfaces. 🎨 code
-                          is poetry.
+                         {userInfo?.about}
                         </p>
                         <div className="border-t border-gray-100 dark:border-zinc-800 my-4"></div>
         
