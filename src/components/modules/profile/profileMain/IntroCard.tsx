@@ -1,12 +1,7 @@
+import { formatDate } from "@/lib/utils";
+import { IUserInfo } from "@/types/TProfile";
 import { Calendar, LinkIcon, MapPin } from "lucide-react"
-interface IUserInfo {
-  name: string;
-  bio: string;
-  about: string;
-  title: string;
-  description: string;
-  image?: string;
-}
+
 interface ProfileHeaderProps {
   userInfo: IUserInfo | null;
   loading: boolean;
@@ -14,8 +9,11 @@ interface ProfileHeaderProps {
 
 export const IntroCard = ({ userInfo, loading }: ProfileHeaderProps) => {
   return (
+
     <div>
-           <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800">
+      {loading ? ( <div>
+Loading....
+      </div>) : (  <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-zinc-800">
                       <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                         Intro
                       </h2>
@@ -31,23 +29,25 @@ export const IntroCard = ({ userInfo, loading }: ProfileHeaderProps) => {
                             <span>
                               Lives in{" "}
                               <strong className="text-gray-900 dark:text-white">
-                                Dhaka, Bangladesh
+                               {userInfo?.location}
                               </strong>
                             </span>
                           </div>
                           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
                             <LinkIcon className="w-5 h-5 text-gray-400" />
                             <a href="#" className="text-blue-600 hover:underline">
-                              safayet.design
+                              {userInfo?.website}
                             </a>
                           </div>
                           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
                             <Calendar className="w-5 h-5 text-gray-400" />
-                            <span>Joined October 2023</span>
+                            <span>{formatDate(userInfo?.dateOfBirth)}</span>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </div>) }
+     
+         
     </div>
   )
 }
