@@ -22,7 +22,7 @@ export const CreatePostBox = () => {
   const { user } = useUser();
 
   // 👉 handle image selection
-  const handleFileChange = (e: any) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
@@ -57,8 +57,9 @@ export const CreatePostBox = () => {
 
       // reload feed
       window.location.reload();
-    } catch (error: any) {
-      toast.error(error?.message || "Something went wrong");
+    } catch (error: Error | unknown) {
+      const message = error instanceof Error ? error.message : "Something went wrong";
+      toast.error(message);
     }
 
     setLoading(false);

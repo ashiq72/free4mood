@@ -44,19 +44,16 @@ export const getMe = async () => {
 };
 
 // lib/api/user/user.ts
-export const updateUser = async (data: {
-  bio: string;
-  about: string;
-  location: string;
-  website: string;
-  dateOfBirth: string;
-}) => {
+// lib/api/user/user.ts
+export const updateUser = async (data: FormData | Record<string, unknown>) => {
+  const isFormData = data instanceof FormData;
+
   const res = await fetch("/api/userinfo", {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
+    headers: isFormData
+      ? undefined
+      : { "Content-Type": "application/json" },
+    body: isFormData ? data : JSON.stringify(data),
   });
 
   const result = await res.json();
@@ -67,4 +64,5 @@ export const updateUser = async (data: {
 
   return result;
 };
+
 

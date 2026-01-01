@@ -13,20 +13,47 @@ export async function PATCH(req: Request) {
     }
 
     const tenantId = "free4mood";
+    const contentType = req.headers.get("content-type") || "";
 
-    // ✅ Read JSON body
-    const body = await req.json();
+    let backendBody: BodyInit;
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+      "x-tenant-id": tenantId,
+    };
+
+    // ✅ IMAGE UPLOAD (multipart/form-data)
+    if (contentType.includes("multipart/form-data")) {
+      const incomingFormData = await req.formData();
+      const formData = new FormData();
+
+      // 🔁 rebuild FormData
+      for (const [key, value] of incomingFormData.entries()) {
+        if (value instanceof File) {
+          const buffer = Buffer.from(await value.arrayBuffer());
+          const blob = new Blob([buffer], { type: value.type });
+          formData.append(key, blob, value.name);
+        } else {
+          formData.append(key, value);
+        }
+      }
+
+      backendBody = formData;
+      // ❌ DO NOT set Content-Type
+    }
+
+    // ✅ JSON UPDATE
+    else {
+      const json = await req.json();
+      backendBody = JSON.stringify(json);
+      headers["Content-Type"] = "application/json";
+    }
 
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/user-info/update-user-info`,
       {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          "x-tenant-id": tenantId,
-        },
-        body: JSON.stringify(body),
+        headers,
+        body: backendBody,
       }
     );
 
