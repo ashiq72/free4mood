@@ -27,7 +27,7 @@ free4mood is a modern social media platform designed for instant mood sharing an
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="https://bponi.sgp1.cdn.digitaloceanspaces.com/bponi/file/aa84e99e-b89d-4be3-9077-f5db78edd4a3.png" alt="free4mood Screenshot" width="800">
+  <img src="https://bponi.sgp1.cdn.digitaloceanspaces.com/bponi/file/d90acbd2-4197-4aa1-a7b8-e1daec2cdae4.png" alt="free4mood Screenshot" width="800">
 </div>
 
 ---
