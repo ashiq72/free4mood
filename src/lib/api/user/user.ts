@@ -4,7 +4,7 @@ import { IFormInput } from "@/types/auth";
 export async function createUser(payload: IFormInput) {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/user-info/create-user-info`,
+      `${process.env.NEXT_PUBLIC_API_CORE_URL}/users/create-user`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
