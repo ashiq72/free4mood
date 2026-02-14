@@ -17,7 +17,7 @@ interface EditProfileFullModalProps {
   userInfo: IUserInfo | null;
 }
 
-interface FormDataType {
+interface FormDataType extends Record<string, unknown> {
   bio: string;
   about: string;
   location: string;
