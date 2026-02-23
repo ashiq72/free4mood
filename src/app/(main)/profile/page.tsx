@@ -1,11 +1,10 @@
 "use client";
 
-import { ProfileHeader } from "@/components/modules/profile/profileMain/ProfileHeader";
-import { ProfileMain } from "@/components/modules/profile/profileMain/ProfileMain";
-import { getMe } from "@/lib/api/user/user";
-import { IUserInfo } from "@/types/TProfile";
+import { ProfileHeader } from "@/features/profile/components/main/ProfileHeader";
+import { ProfileMain } from "@/features/profile/components/main/ProfileMain";
+import { getMe } from "@/lib/api/user";
+import type { IUserInfo } from "@/features/profile/types";
 import { useEffect, useState } from "react";
-
 
 export default function Profile() {
   const [userInfo, setUserInfo] = useState<IUserInfo | null>(null);
@@ -15,7 +14,7 @@ export default function Profile() {
   const loadUser = async () => {
     try {
       setLoading(true);
-      const res = await getMe();
+      const res = await getMe<IUserInfo>();
       setUserInfo(res.data);
     } catch (err) {
       console.error(err);

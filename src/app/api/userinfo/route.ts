@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { getTenantIdFallback } from "@/lib/api/config";
+
+const getTenantId = async () => {
+  const host = (await headers()).get("host") ?? "";
+  const parts = host.split(".");
+  if (parts.length > 1 && parts[0]) return parts[0];
+  return getTenantIdFallback();
+};
 
 export async function PATCH(req: Request) {
   try {
@@ -12,7 +20,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const tenantId = "free4mood";
+    const tenantId = await getTenantId();
     const contentType = req.headers.get("content-type") || "";
 
     let backendBody: BodyInit;

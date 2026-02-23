@@ -1,24 +1,12 @@
 "use client";
 
-import { createUser } from "@/lib/api/user/user";
+import { createUser } from "@/lib/api/user";
+import { GenderEnum, IFormInput } from "@/features/auth/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
-enum GenderEnum {
-  male = "male",
-  female = "female",
-  other = "other",
-}
-
-interface IFormInput {
-  name: string;
-  gender: GenderEnum;
-  phone: string;
-  password: string;
-}
 
 export default function Register() {
   const {

@@ -1,10 +1,9 @@
-import ProfileEdit from "@/components/modules/profile/pofileEdit/ProfileEdit";
+import ProfileEdit from "@/features/profile/components/edit/ProfileEdit";
 
-export default function  page  () {
+export default function Page() {
   return (
     <div>
-
-        <ProfileEdit />
+      <ProfileEdit />
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import Navber from "@/components/layout/Navber";
-import { getCurrentUser } from "@/lib/api/auth/auth";
-import Providers from "@/providers/Providers";
+import Navbar from "@/features/layout/components/Navbar";
+import { getCurrentUser } from "@/lib/api/auth.server";
+import Providers from "@/shared/providers/Providers";
 
 const CommonLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getCurrentUser();
@@ -8,7 +8,7 @@ const CommonLayout = async ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
       <Providers user={user}>
-        <Navber />
+        <Navbar />
         {children}
       </Providers>
     </div>
