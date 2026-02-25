@@ -1,8 +1,8 @@
-import { CreatePostBox } from "@/components/modules/feed/CreatePostBox";
-import { Feed } from "@/components/modules/feed/Feed";
-import { LeftSidebar } from "@/components/modules/feed/LeftSidebar";
-import { RightSidebar } from "@/components/modules/feed/RightSidebar";
-import { Stories } from "@/components/modules/feed/Stories";
+import { CreatePostBox } from "@/features/feed/components/CreatePostBox";
+import { Feed } from "@/features/feed/components/Feed";
+import { LeftSidebar } from "@/features/feed/components/LeftSidebar";
+import { RightSidebar } from "@/features/feed/components/RightSidebar";
+import { Stories } from "@/features/feed/components/Stories";
 
 export default function Home() {
   return (

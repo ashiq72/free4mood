@@ -5,12 +5,8 @@ import Link from "next/link";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { loginUser } from "@/lib/api/auth/auth";
-
-interface IFormInput {
-  phone: string;
-  password: string;
-}
+import { loginUser } from "@/lib/api/auth.client";
+import type { LoginPayload } from "@/lib/api/auth.client";
 
 export default function Login() {
   const router = useRouter();
@@ -20,12 +16,12 @@ export default function Login() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<IFormInput>();
+  } = useForm<LoginPayload>();
 
   // --- Phone validation helper ---
   const validatePhone = (phone: string) => /^01[0-9]{9}$/.test(phone.trim());
 
-  const onSubmit: SubmitHandler<IFormInput> = async ({ phone, password }) => {
+  const onSubmit: SubmitHandler<LoginPayload> = async ({ phone, password }) => {
     setLoading(true);
 
     try {
@@ -40,7 +36,7 @@ export default function Login() {
 
       toast.success("Login successful");
       router.push("/");
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);

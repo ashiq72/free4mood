@@ -1,9 +1,9 @@
-import Navber from "@/components/layout/Navber";
+import Navbar from "@/features/layout/components/Navbar";
 
 const CommonLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
-      <Navber />
+      <Navbar />
       {children}
     </div>
   );
