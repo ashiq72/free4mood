@@ -1,87 +1,339 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Bookmark,
-  Calendar,
+  Bell,
   ChevronDown,
-  Clock,
-  Flag,
+  Compass,
+  MessageCircle,
+  Settings,
+  UserCircle2,
   Users,
   Video,
 } from "lucide-react";
+import { toast } from "sonner";
+import type { IUserInfo } from "@/features/profile/types";
+import { getMyPosts } from "@/lib/api/post";
+import {
+  getFollowSuggestions,
+  getNotificationStreamUrl,
+  getIncomingFriendRequests,
+  getMyFriends,
+  getUnreadNotificationCount,
+  type FollowUser,
+} from "@/lib/api/social";
+import { getMe } from "@/lib/api/user";
+
+type SidebarCounts = {
+  friends: number;
+  requests: number;
+  unreadNotifications: number;
+  posts: number;
+};
+
+const menuItems: Array<{
+  key: keyof SidebarCounts | null;
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}> = [
+  {
+    key: null,
+    href: "/profile",
+    label: "My Profile",
+    icon: UserCircle2,
+    color: "text-indigo-500",
+  },
+  {
+    key: "friends",
+    href: "/friends",
+    label: "Friends",
+    icon: Users,
+    color: "text-blue-500",
+  },
+  {
+    key: "requests",
+    href: "/friends/requests",
+    label: "Requests",
+    icon: MessageCircle,
+    color: "text-emerald-500",
+  },
+  {
+    key: "unreadNotifications",
+    href: "/notifications",
+    label: "Notifications",
+    icon: Bell,
+    color: "text-rose-500",
+  },
+  {
+    key: null,
+    href: "/watch",
+    label: "Watch",
+    icon: Video,
+    color: "text-violet-500",
+  },
+  {
+    key: null,
+    href: "/settings",
+    label: "Settings",
+    icon: Settings,
+    color: "text-orange-500",
+  },
+];
 
 export const LeftSidebar = () => {
-  const menuItems = [
-    { icon: Users, label: "Friends", color: "text-blue-500" },
-    { icon: Clock, label: "Memories", color: "text-blue-400" },
-    { icon: Bookmark, label: "Saved", color: "text-purple-500" },
-    { icon: Flag, label: "Pages", color: "text-orange-500" },
-    { icon: Video, label: "Video", color: "text-blue-600" },
-    { icon: Calendar, label: "Events", color: "text-red-500" },
-  ];
+  const [me, setMe] = useState<IUserInfo | null>(null);
+  const [counts, setCounts] = useState<SidebarCounts>({
+    friends: 0,
+    requests: 0,
+    unreadNotifications: 0,
+    posts: 0,
+  });
+  const [suggestions, setSuggestions] = useState<FollowUser[]>([]);
+  const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const loadSidebar = useCallback(async (silent = false) => {
+    try {
+      if (!silent) {
+        setLoading(true);
+      }
+
+      const [meRes, friendsRes, requestRes, unreadRes, postsRes, suggestionRes] =
+        await Promise.all([
+          getMe<IUserInfo>(),
+          getMyFriends({ limit: 100 }),
+          getIncomingFriendRequests({ limit: 100 }),
+          getUnreadNotificationCount(),
+          getMyPosts({ limit: 100 }),
+          getFollowSuggestions({ limit: 4 }),
+        ]);
+
+      const meData = meRes.data || null;
+      const friendRows = Array.isArray(friendsRes.data) ? friendsRes.data : [];
+      const requestRows = Array.isArray(requestRes.data) ? requestRes.data : [];
+      const postRows = Array.isArray(postsRes.data) ? postsRes.data : [];
+      const suggestionRows = Array.isArray(suggestionRes.data)
+        ? suggestionRes.data
+        : [];
+
+      setMe(meData);
+      setCounts({
+        friends: friendRows.length,
+        requests: requestRows.length,
+        unreadNotifications: Number(unreadRes.data?.unreadCount || 0),
+        posts: postRows.length,
+      });
+      setSuggestions(suggestionRows);
+    } catch (error: unknown) {
+      if (!silent) {
+        const message =
+          error instanceof Error ? error.message : "Failed to load sidebar";
+        toast.error(message);
+      }
+    } finally {
+      if (!silent) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSidebar();
+  }, [loadSidebar]);
+
+  useEffect(() => {
+    let active = true;
+    let stream: EventSource | null = null;
+    let pollTimer: number | null = null;
+
+    const refreshUnread = async () => {
+      try {
+        const res = await getUnreadNotificationCount();
+        if (!active) return;
+        setCounts((prev) => ({
+          ...prev,
+          unreadNotifications: Number(res.data?.unreadCount || 0),
+        }));
+      } catch {
+        // ignore background refresh failures
+      }
+    };
+
+    try {
+      const streamUrl = getNotificationStreamUrl();
+      stream = new EventSource(streamUrl);
+
+      stream.addEventListener("unread_count", (event) => {
+        if (!active) return;
+        try {
+          const payload = JSON.parse((event as MessageEvent).data || "{}");
+          setCounts((prev) => ({
+            ...prev,
+            unreadNotifications: Number(payload?.unreadCount || 0),
+          }));
+        } catch {
+          // ignore parse errors
+        }
+      });
+
+      stream.addEventListener("notification_new", () => {
+        if (!active) return;
+        void loadSidebar(true);
+      });
+
+      stream.onerror = () => {
+        if (!active) return;
+        if (pollTimer === null) {
+          pollTimer = window.setInterval(() => {
+            void refreshUnread();
+            void loadSidebar(true);
+          }, 30000);
+        }
+      };
+    } catch {
+      pollTimer = window.setInterval(() => {
+        void refreshUnread();
+        void loadSidebar(true);
+      }, 30000);
+    }
+
+    return () => {
+      active = false;
+      if (pollTimer !== null) {
+        window.clearInterval(pollTimer);
+      }
+      if (stream) {
+        stream.close();
+      }
+    };
+  }, [loadSidebar]);
+
+  const shownMenu = useMemo(
+    () => (expanded ? menuItems : menuItems.slice(0, 4)),
+    [expanded],
+  );
 
   return (
-    <div className="space-y-6 pr-4">
-      {/* User Mini Profile */}
-      <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
-        <img
-          src="https://picsum.photos/200?random=41"
-          alt="User"
-          className="w-10 h-10 rounded-full"
-        />
-        <span className="font-semibold text-gray-900 dark:text-white">
-          Safayet Hossain
-        </span>
-      </div>
+    <div className="space-y-5 pr-4">
+      <Link
+        href="/profile"
+        className="block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/80"
+      >
+        <div className="flex items-center gap-3">
+          <img
+            src={me?.image || "https://picsum.photos/200?random=41"}
+            alt="User"
+            className="h-11 w-11 rounded-full object-cover"
+          />
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-gray-900 dark:text-white">
+              {me?.name || "My Profile"}
+            </p>
+            <p className="truncate text-xs text-gray-500">
+              {me?.bio || "Keep your profile updated"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          <StatCell label="Posts" value={counts.posts} />
+          <StatCell label="Friends" value={counts.friends} />
+          <StatCell label="Alerts" value={counts.unreadNotifications} />
+        </div>
+      </Link>
 
-      {/* Menu Items */}
       <div className="space-y-1">
-        {menuItems.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer group"
+        {shownMenu.map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className="group flex items-center gap-3 rounded-xl p-3 transition hover:bg-gray-200 dark:hover:bg-zinc-800"
           >
-            <item.icon className={`w-6 h-6 ${item.color}`} />
-            <span className="font-medium text-gray-700 dark:text-gray-200 group-hover:text-black dark:group-hover:text-white">
+            <item.icon className={`h-5 w-5 ${item.color}`} />
+            <span className="flex-1 text-sm font-medium text-gray-700 group-hover:text-black dark:text-gray-200 dark:group-hover:text-white">
               {item.label}
             </span>
-          </div>
+            {item.key && counts[item.key] > 0 && (
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                {counts[item.key]}
+              </span>
+            )}
+          </Link>
         ))}
-        <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-zinc-700 flex items-center justify-center">
-            <ChevronDown className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+
+        <button
+          type="button"
+          onClick={() => setExpanded((prev) => !prev)}
+          className="flex w-full items-center gap-3 rounded-xl p-3 transition hover:bg-gray-200 dark:hover:bg-zinc-800"
+        >
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-300 dark:bg-zinc-700">
+            <ChevronDown
+              className={`h-4 w-4 text-gray-700 transition-transform dark:text-gray-300 ${
+                expanded ? "rotate-180" : ""
+              }`}
+            />
           </div>
-          <span className="font-medium text-gray-700 dark:text-gray-200">
-            See More
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            {expanded ? "See less" : "See more"}
           </span>
-        </div>
+        </button>
       </div>
 
-      <div className="border-b border-gray-300 dark:border-zinc-700 my-2"></div>
+      <div className="border-b border-gray-300 dark:border-zinc-700" />
 
-      {/* Shortcuts */}
-      <div>
-        <h3 className="text-gray-500 font-semibold px-3 mb-2">
-          Your Shortcuts
-        </h3>
-        <div className="space-y-1">
-          {["Web Design Community", "Next.js Developers", "React BD"].map(
-            (group, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Discover People
+          </h3>
+          <Link
+            href="/friends"
+            className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
+          >
+            <Compass className="h-3.5 w-3.5" />
+            Explore
+          </Link>
+        </div>
+
+        {loading ? (
+          <p className="text-sm text-gray-500">Loading...</p>
+        ) : suggestions.length === 0 ? (
+          <p className="text-sm text-gray-500">No suggestions available now.</p>
+        ) : (
+          <div className="space-y-2">
+            {suggestions.map((person) => (
+              <Link
+                key={person._id}
+                href={`/profile/${person._id}`}
+                className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-gray-100 dark:hover:bg-zinc-800"
               >
                 <img
-                  src={`https://picsum.photos/100?random=${i + 10}`}
-                  className="w-9 h-9 rounded-lg object-cover"
-                  alt="Group"
+                  src={person.image || "https://picsum.photos/100?random=66"}
+                  alt={person.name || "User"}
+                  className="h-9 w-9 rounded-full object-cover"
                 />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-                  {group}
-                </span>
-              </div>
-            )
-          )}
-        </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {person.name || "Unknown"}
+                  </p>
+                  <p className="truncate text-xs text-gray-500">
+                    {person.bio || "New member"}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
+const StatCell = ({ label, value }: { label: string; value: number }) => (
+  <div className="rounded-lg bg-gray-100 px-2 py-1.5 dark:bg-zinc-800">
+    <p className="text-sm font-semibold text-gray-900 dark:text-white">{value}</p>
+    <p className="text-[11px] text-gray-500">{label}</p>
+  </div>
+);

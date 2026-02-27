@@ -96,6 +96,31 @@ export const getMyPosts = async (params?: FeedQuery): Promise<FeedPostsResponse>
   return assertSuccess(data, "Failed to fetch your posts");
 };
 
+export const getUserPosts = async (
+  userId: string,
+  params?: FeedQuery,
+): Promise<FeedPostsResponse> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  const suffix = buildFeedQuery(params);
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const data = await requestJson<FeedPostsResponse>(
+    `${getApiUrl()}/posts/user/${encodeURIComponent(userId)}${suffix}`,
+    {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+      },
+    },
+  );
+
+  return assertSuccess(data, "Failed to fetch user posts");
+};
+
 export const togglePostLike = async (
   postId: string,
 ): Promise<ApiResponse<Post>> => {

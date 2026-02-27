@@ -7,6 +7,7 @@ import {
   deletePostComment,
   getAllPosts,
   getMyPosts,
+  getUserPosts,
   togglePostLike,
   updatePost,
 } from "@/lib/api/post";
@@ -18,10 +19,11 @@ import { useUser } from "@/shared/context/UserContext";
 import { createReport, toggleBlockUser } from "@/lib/api/social";
 
 type FeedProps = {
-  scope?: "all" | "my";
+  scope?: "all" | "my" | "user";
+  targetUserId?: string;
 };
 
-export const Feed = ({ scope = "all" }: FeedProps) => {
+export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
   const PAGE_SIZE = 10;
   const { user } = useUser();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -65,6 +67,11 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
                 limit: PAGE_SIZE,
                 cursor: mode === "more" ? cursorValue || undefined : undefined,
               })
+            : scope === "user" && targetUserId
+              ? await getUserPosts(targetUserId, {
+                  limit: PAGE_SIZE,
+                  cursor: mode === "more" ? cursorValue || undefined : undefined,
+                })
             : await getAllPosts({
                 limit: PAGE_SIZE,
                 cursor: mode === "more" ? cursorValue || undefined : undefined,
@@ -99,7 +106,7 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
         }
       }
     },
-    [scope],
+    [scope, targetUserId],
   );
 
   useEffect(() => {
@@ -110,14 +117,22 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
       setLoading(false);
       return;
     }
+    if (scope === "user" && !targetUserId) {
+      setPosts([]);
+      setCursor(null);
+      setHasMore(false);
+      setLoading(false);
+      return;
+    }
     setPosts([]);
     setCursor(null);
     setHasMore(true);
     void loadPosts("reset", null);
-  }, [scope, loadPosts, user?.userId]);
+  }, [scope, targetUserId, loadPosts, user?.userId]);
 
   useEffect(() => {
     if (!user?.userId) return;
+    if (scope === "user" && !targetUserId) return;
     if (!hasMore || loading || loadingMore) return;
     const node = loadMoreRef.current;
     if (!node) return;
@@ -134,7 +149,16 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
     observer.observe(node);
 
     return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, loadPosts, cursor, user?.userId]);
+  }, [
+    hasMore,
+    loading,
+    loadingMore,
+    loadPosts,
+    cursor,
+    scope,
+    targetUserId,
+    user?.userId,
+  ]);
 
   const replacePost = (updated?: Post) => {
     const updatedId = normalizeId(updated?._id);
@@ -222,7 +246,9 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
     setActionLoadingId(`post-${postId}`);
     try {
       await deletePost(postId);
-      setPosts((prev) => prev.filter((item) => item._id !== postId));
+      setPosts((prev) =>
+        prev.filter((item) => normalizeId(item._id) !== normalizeId(postId)),
+      );
       toast.success("Post deleted");
     } catch (error: unknown) {
       const message =

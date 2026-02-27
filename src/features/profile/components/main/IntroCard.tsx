@@ -8,6 +8,13 @@ interface ProfileHeaderProps {
 }
 
 export const IntroCard = ({ userInfo, loading }: ProfileHeaderProps) => {
+  const website = userInfo?.website?.trim();
+  const websiteHref = website
+    ? /^https?:\/\//i.test(website)
+      ? website
+      : `https://${website}`
+    : "";
+
   return (
     <div>
       {loading ? (
@@ -19,7 +26,7 @@ export const IntroCard = ({ userInfo, loading }: ProfileHeaderProps) => {
           </h2>
           <div className="space-y-4">
             <p className="text-sm text-center text-gray-600 dark:text-gray-300">
-              {userInfo?.about}
+              {userInfo?.about || "No intro added yet."}
             </p>
             <div className="border-t border-gray-100 dark:border-zinc-800 my-4"></div>
 
@@ -29,19 +36,32 @@ export const IntroCard = ({ userInfo, loading }: ProfileHeaderProps) => {
                 <span>
                   Lives in{" "}
                   <strong className="text-gray-900 dark:text-white">
-                    {userInfo?.location}
+                    {userInfo?.location || "Unknown"}
                   </strong>
                 </span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
                 <LinkIcon className="w-5 h-5 text-gray-400" />
-                <a href="#" className="text-blue-600 hover:underline">
-                  {userInfo?.website}
-                </a>
+                {website ? (
+                  <a
+                    href={websiteHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {website}
+                  </a>
+                ) : (
+                  <span>No website</span>
+                )}
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
                 <Calendar className="w-5 h-5 text-gray-400" />
-                <span>{formatDate(userInfo?.dateOfBirth)}</span>
+                <span>
+                  {userInfo?.dateOfBirth
+                    ? formatDate(userInfo.dateOfBirth)
+                    : "Birthday not set"}
+                </span>
               </div>
             </div>
           </div>

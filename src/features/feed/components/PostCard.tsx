@@ -1,7 +1,15 @@
-﻿import { Heart, MessageCircle, MoreHorizontal, Share2, Users } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Share2,
+  Smile,
+  Users,
+} from "lucide-react";
 import dayjs from "dayjs";
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { QUICK_EMOJIS } from "@/features/feed/constants/emoji";
 import { ActionButton } from "./ActionButton";
 
 type CommentItem = {
@@ -81,6 +89,7 @@ export const PostCard = ({
 }: PostCardProps) => {
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState(content);
@@ -102,6 +111,7 @@ export const PostCard = ({
     if (!text) return;
     await onCommentSubmit(postId, text);
     setCommentText("");
+    setShowCommentEmojiPicker(false);
   };
 
   const handleSavePost = async () => {
@@ -310,13 +320,22 @@ export const PostCard = ({
       {showCommentBox && (
         <div className="px-3 py-2 border-b border-gray-100 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Write a comment..."
-              className="h-9 w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 text-sm outline-none"
-            />
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Write a comment..."
+                className="h-9 w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 pr-10 text-sm outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCommentEmojiPicker((prev) => !prev)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+              >
+                <Smile className="h-4 w-4" />
+              </button>
+            </div>
             <button
               type="button"
               disabled={commentLoading || !commentText.trim()}
@@ -326,6 +345,22 @@ export const PostCard = ({
               {commentLoading ? "..." : "Post"}
             </button>
           </div>
+          {showCommentEmojiPicker && (
+            <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 p-2 dark:border-zinc-700 dark:bg-zinc-800">
+              <div className="grid grid-cols-8 gap-1">
+                {QUICK_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setCommentText((prev) => `${prev}${emoji}`)}
+                    className="rounded p-1 text-base hover:bg-white dark:hover:bg-zinc-700"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -345,7 +380,13 @@ export const PostCard = ({
           className="cursor-pointer"
           icon={MessageCircle}
           label="Comment"
-          onClick={() => setShowCommentBox((prev) => !prev)}
+          onClick={() =>
+            setShowCommentBox((prev) => {
+              const next = !prev;
+              if (!next) setShowCommentEmojiPicker(false);
+              return next;
+            })
+          }
         />
         <ActionButton className="cursor-pointer" icon={Share2} label="Share" />
       </div>

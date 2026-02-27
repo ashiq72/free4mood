@@ -66,6 +66,22 @@ export type SocialSearchResult = {
   }[];
 };
 
+export type SocialProfilePayload = {
+  user: {
+    _id?: string;
+    name?: string;
+    bio?: string;
+    about?: string;
+    website?: string;
+    location?: string;
+    dateOfBirth?: string;
+    image?: string;
+    createdAt?: string;
+  };
+  followStats: FollowStats;
+  photos: string[];
+};
+
 type CursorQuery = {
   limit?: number;
   cursor?: string;
@@ -390,4 +406,17 @@ export const searchSocial = async (
     },
   );
   return assertSuccess(data, "Failed to search");
+};
+
+export const getSocialProfile = async (
+  userId: string,
+): Promise<ApiResponse<SocialProfilePayload>> => {
+  const data = await requestJson<ApiResponse<SocialProfilePayload>>(
+    `${getApiUrl()}/profiles/${userId}`,
+    {
+      headers: withAuthHeaders(),
+      cache: "no-store",
+    },
+  );
+  return assertSuccess(data, "Failed to fetch profile");
 };
