@@ -7,6 +7,7 @@ export interface Post {
   comments?:
     | number
     | {
+        _id?: string;
         user?: { _id?: string; name?: string } | string;
         text?: string;
         createdAt?: string;

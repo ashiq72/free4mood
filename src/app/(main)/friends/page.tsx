@@ -1,54 +1,83 @@
-﻿"use client";
+"use client";
 
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type ElementType } from "react";
 import {
-  UserPlus,
+  ArrowRight,
+  BellRing,
   Search,
-  MoreHorizontal,
-  Users,
+  UserCheck,
   UserMinus,
+  Users,
 } from "lucide-react";
 import { useUser } from "@/shared/context/UserContext";
 import {
   getFollowSuggestions,
-  getFollowerUsers,
-  getFollowingUsers,
-  toggleFollow,
+  getIncomingFriendRequests,
+  getMyFriends,
+  getOutgoingFriendRequests,
+  sendFriendRequest,
+  cancelFriendRequest,
+  type FriendRequestItem,
   type FollowUser,
 } from "@/lib/api/social";
 import { toast } from "sonner";
 
 const PAGE_SIZE = 12;
 
+type ActiveTab = "suggestions" | "requests" | "friends";
+
+type LoadMode = "reset" | "more";
+
 export default function FriendsPage() {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState<
-    "suggestions" | "requests" | "all_friends"
-  >("suggestions");
-  const [search, setSearch] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchFromQuery = (searchParams.get("search") || "").trim();
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>("suggestions");
+  const [search, setSearch] = useState(searchFromQuery);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const [suggestions, setSuggestions] = useState<FollowUser[]>([]);
   const [suggestionsCursor, setSuggestionsCursor] = useState<string | null>(null);
   const [suggestionsHasMore, setSuggestionsHasMore] = useState(false);
 
-  const [followers, setFollowers] = useState<FollowUser[]>([]);
-  const [followersCursor, setFollowersCursor] = useState<string | null>(null);
-  const [followersHasMore, setFollowersHasMore] = useState(false);
+  const [friends, setFriends] = useState<FollowUser[]>([]);
+  const [friendsCursor, setFriendsCursor] = useState<string | null>(null);
+  const [friendsHasMore, setFriendsHasMore] = useState(false);
 
-  const [following, setFollowing] = useState<FollowUser[]>([]);
-  const [followingCursor, setFollowingCursor] = useState<string | null>(null);
-  const [followingHasMore, setFollowingHasMore] = useState(false);
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequestItem[]>(
+    [],
+  );
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequestItem[]>(
+    [],
+  );
 
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const followingSet = useMemo(
-    () => new Set(following.map((item) => item._id)),
-    [following],
+  const requestedSet = useMemo(
+    () =>
+      new Set(
+        outgoingRequests
+          .map((item) => item.to?._id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    [outgoingRequests],
+  );
+  const incomingRequesterSet = useMemo(
+    () =>
+      new Set(
+        incomingRequests
+          .map((item) => item.from?._id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    [incomingRequests],
   );
 
-  const loadSuggestions = async (mode: "reset" | "more") => {
+  const loadSuggestions = async (mode: LoadMode) => {
     const res = await getFollowSuggestions({
       limit: PAGE_SIZE,
       cursor: mode === "more" ? suggestionsCursor || undefined : undefined,
@@ -70,61 +99,53 @@ export default function FriendsPage() {
     });
   };
 
-  const loadFollowers = async (mode: "reset" | "more") => {
-    if (!user?.userId) return;
-    const res = await getFollowerUsers(user.userId, {
+  const loadFriends = async (mode: LoadMode) => {
+    const res = await getMyFriends({
       limit: PAGE_SIZE,
-      cursor: mode === "more" ? followersCursor || undefined : undefined,
+      cursor: mode === "more" ? friendsCursor || undefined : undefined,
     });
+
     const rows = Array.isArray(res.data) ? res.data : [];
     const meta = (res.meta || {}) as {
       hasMore?: boolean;
       nextCursor?: string | null;
     };
 
-    setFollowersHasMore(Boolean(meta.hasMore));
-    setFollowersCursor(meta.nextCursor ?? null);
-    setFollowers((prev) => {
+    setFriendsHasMore(Boolean(meta.hasMore));
+    setFriendsCursor(meta.nextCursor ?? null);
+    setFriends((prev) => {
       if (mode === "reset") return rows;
       const seen = new Set(prev.map((x) => x._id));
       return [...prev, ...rows.filter((x) => !seen.has(x._id))];
     });
   };
 
-  const loadFollowing = async (mode: "reset" | "more") => {
-    if (!user?.userId) return;
-    const res = await getFollowingUsers(user.userId, {
-      limit: PAGE_SIZE,
-      cursor: mode === "more" ? followingCursor || undefined : undefined,
-    });
-    const rows = Array.isArray(res.data) ? res.data : [];
-    const meta = (res.meta || {}) as {
-      hasMore?: boolean;
-      nextCursor?: string | null;
-    };
+  const loadRequestSnapshots = async () => {
+    const [incomingRes, outgoingRes] = await Promise.all([
+      getIncomingFriendRequests({ limit: 50 }),
+      getOutgoingFriendRequests({ limit: 50 }),
+    ]);
 
-    setFollowingHasMore(Boolean(meta.hasMore));
-    setFollowingCursor(meta.nextCursor ?? null);
-    setFollowing((prev) => {
-      if (mode === "reset") return rows;
-      const seen = new Set(prev.map((x) => x._id));
-      return [...prev, ...rows.filter((x) => !seen.has(x._id))];
-    });
+    setIncomingRequests(Array.isArray(incomingRes.data) ? incomingRes.data : []);
+    setOutgoingRequests(Array.isArray(outgoingRes.data) ? outgoingRes.data : []);
   };
 
   const loadInitial = async () => {
-    if (!user?.userId) return;
+    if (!user?.userId) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
       await Promise.all([
         loadSuggestions("reset"),
-        loadFollowers("reset"),
-        loadFollowing("reset"),
+        loadFriends("reset"),
+        loadRequestSnapshots(),
       ]);
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : "Failed to load friend graph";
+        error instanceof Error ? error.message : "Failed to load friend page";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -137,6 +158,10 @@ export default function FriendsPage() {
   }, [user?.userId]);
 
   useEffect(() => {
+    setSearch(searchFromQuery);
+  }, [searchFromQuery]);
+
+  useEffect(() => {
     if (!user?.userId) return;
     const timer = window.setTimeout(() => {
       void loadSuggestions("reset");
@@ -145,25 +170,40 @@ export default function FriendsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, user?.userId]);
 
-  const handleToggleFollow = async (targetUserId: string) => {
-    setActionLoadingId(targetUserId);
+  const handleFriendRequestToggle = async (targetUserId: string) => {
+    setActionLoadingId(`request-${targetUserId}`);
     try {
-      const res = await toggleFollow(targetUserId);
-      const isFollowingNow = Boolean(res.data?.isFollowing);
-
-      if (isFollowingNow) {
-        const userFromSuggestions = suggestions.find((x) => x._id === targetUserId);
-        if (userFromSuggestions) {
-          setFollowing((prev) => [userFromSuggestions, ...prev]);
-        }
-        setSuggestions((prev) => prev.filter((x) => x._id !== targetUserId));
+      const existing = outgoingRequests.find((item) => item.to?._id === targetUserId);
+      if (existing?._id) {
+        await cancelFriendRequest(existing._id);
+        setOutgoingRequests((prev) =>
+          prev.filter((item) => item._id !== existing._id),
+        );
+        toast.success("Friend request cancelled");
       } else {
-        setFollowing((prev) => prev.filter((x) => x._id !== targetUserId));
+        await sendFriendRequest(targetUserId);
+        await loadRequestSnapshots();
+        toast.success("Friend request sent");
       }
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : "Failed to update follow state";
-      toast.error(message);
+        error instanceof Error ? error.message : "Failed to update friend request";
+      const lower = message.toLowerCase();
+      if (lower.includes("already sent you a request")) {
+        await loadRequestSnapshots();
+        toast.error("This user already sent you a request. Open Requests tab.");
+        setActiveTab("requests");
+        router.push("/friends/requests");
+      } else if (
+        lower.includes("already sent") ||
+        lower.includes("already friends") ||
+        lower.includes("conflict")
+      ) {
+        await Promise.all([loadRequestSnapshots(), loadFriends("reset")]);
+        toast.error(message);
+      } else {
+        toast.error(message);
+      }
     } finally {
       setActionLoadingId(null);
     }
@@ -174,14 +214,11 @@ export default function FriendsPage() {
       setLoadingMore(true);
       if (activeTab === "suggestions") {
         await loadSuggestions("more");
-      } else if (activeTab === "requests") {
-        await loadFollowers("more");
-      } else {
-        await loadFollowing("more");
+      } else if (activeTab === "friends") {
+        await loadFriends("more");
       }
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to load more";
+      const message = error instanceof Error ? error.message : "Failed to load more";
       toast.error(message);
     } finally {
       setLoadingMore(false);
@@ -191,9 +228,9 @@ export default function FriendsPage() {
   const canLoadMore =
     activeTab === "suggestions"
       ? suggestionsHasMore
-      : activeTab === "requests"
-        ? followersHasMore
-        : followingHasMore;
+      : activeTab === "friends"
+        ? friendsHasMore
+        : false;
 
   if (!user) {
     return (
@@ -212,15 +249,24 @@ export default function FriendsPage() {
             Friends
           </h1>
 
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search people"
-              className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-zinc-800 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search people"
+                className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-zinc-800 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <Link
+              href="/friends/requests"
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-zinc-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800"
+            >
+              <UserCheck className="w-4 h-4" />
+              Requests
+            </Link>
           </div>
         </div>
 
@@ -233,37 +279,53 @@ export default function FriendsPage() {
           <TabButton
             active={activeTab === "requests"}
             onClick={() => setActiveTab("requests")}
-            label="Followers"
-            count={followers.length}
+            label="Requests"
+            count={incomingRequests.length + outgoingRequests.length}
           />
           <TabButton
-            active={activeTab === "all_friends"}
-            onClick={() => setActiveTab("all_friends")}
-            label="Following"
-            count={following.length}
+            active={activeTab === "friends"}
+            onClick={() => setActiveTab("friends")}
+            label="Friends"
+            count={friends.length}
           />
         </div>
       </div>
 
       {loading ? (
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-gray-300">
-          Loading graph...
+          Loading friend page...
         </div>
       ) : (
         <div className="space-y-8">
           {activeTab === "suggestions" && (
             <section>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {suggestions.map((person) => (
-                  <UserCard
-                    key={person._id}
-                    person={person}
-                    actionLabel="Follow"
-                    actionIcon={UserPlus}
-                    loading={actionLoadingId === person._id}
-                    onAction={() => void handleToggleFollow(person._id)}
-                  />
-                ))}
+                {suggestions.map((person) => {
+                  const isRequested = requestedSet.has(person._id);
+                  const hasIncomingRequest = incomingRequesterSet.has(person._id);
+                  return (
+                    <UserCard
+                      key={person._id}
+                      person={person}
+                      actionLabel={
+                        hasIncomingRequest
+                          ? "Respond request"
+                          : isRequested
+                            ? "Cancel request"
+                            : "Add friend"
+                      }
+                      actionIcon={isRequested ? UserMinus : UserCheck}
+                      loading={actionLoadingId === `request-${person._id}`}
+                      onAction={() => {
+                        if (hasIncomingRequest) {
+                          router.push("/friends/requests");
+                          return;
+                        }
+                        void handleFriendRequestToggle(person._id);
+                      }}
+                    />
+                  );
+                })}
                 {suggestions.length === 0 && (
                   <EmptyState message="No suggestions available" />
                 )}
@@ -273,29 +335,45 @@ export default function FriendsPage() {
 
           {activeTab === "requests" && (
             <section>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {followers.map((person) => (
-                  <UserCard
-                    key={person._id}
-                    person={person}
-                    actionLabel={followingSet.has(person._id) ? "Following" : "Follow back"}
-                    actionIcon={UserPlus}
-                    loading={actionLoadingId === person._id}
-                    disabled={followingSet.has(person._id)}
-                    onAction={() => void handleToggleFollow(person._id)}
-                  />
-                ))}
-                {followers.length === 0 && (
-                  <EmptyState message="No followers yet" />
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
+                  <p className="text-sm text-gray-500">Incoming requests</p>
+                  <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
+                    {incomingRequests.length}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
+                  <p className="text-sm text-gray-500">Sent requests</p>
+                  <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
+                    {outgoingRequests.length}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-dashed border-gray-300 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/50 p-6">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                    <BellRing className="w-5 h-5" />
+                    <span className="text-sm font-medium">
+                      Open request manager to accept, reject, or cancel friend requests
+                    </span>
+                  </div>
+                  <Link
+                    href="/friends/requests"
+                    className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    Open Requests
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             </section>
           )}
 
-          {activeTab === "all_friends" && (
+          {activeTab === "friends" && (
             <section>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {following.map((person) => (
+                {friends.map((person) => (
                   <div
                     key={person._id}
                     className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800"
@@ -303,30 +381,20 @@ export default function FriendsPage() {
                     <img
                       src={person.image || "https://picsum.photos/200?random=21"}
                       alt={person.name}
-                      className="w-20 h-20 rounded-xl object-cover"
+                      className="w-16 h-16 rounded-full object-cover"
                     />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 dark:text-white truncate">
                         {person.name}
                       </h3>
-                      <p className="text-sm text-gray-500 mb-2 line-clamp-1">
+                      <p className="text-sm text-gray-500 line-clamp-1">
                         {person.bio || "No bio yet"}
                       </p>
-                      <button
-                        onClick={() => void handleToggleFollow(person._id)}
-                        disabled={actionLoadingId === person._id}
-                        className="px-4 py-1.5 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                      >
-                        {actionLoadingId === person._id ? "..." : "Unfollow"}
-                      </button>
                     </div>
-                    <button className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
                   </div>
                 ))}
-                {following.length === 0 && (
-                  <EmptyState message="You are not following anyone yet" />
+                {friends.length === 0 && (
+                  <EmptyState message="No friends yet. Send requests from Suggestions." />
                 )}
               </div>
             </section>
@@ -379,20 +447,14 @@ const UserCard = ({
       <p className="text-xs text-gray-500 mb-3 line-clamp-1">
         {person.bio || "No bio yet"}
       </p>
-      <div className="flex flex-col gap-2">
-        <button
-          onClick={onAction}
-          disabled={loading || disabled}
-          className="w-full py-1.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
-        >
-          <ActionIcon className="w-4 h-4" />
-          {loading ? "..." : actionLabel}
-        </button>
-        <button className="w-full py-1.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
-          <UserMinus className="w-4 h-4" />
-          Remove
-        </button>
-      </div>
+      <button
+        onClick={onAction}
+        disabled={loading || disabled}
+        className="w-full py-1.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+      >
+        <ActionIcon className="w-4 h-4" />
+        {loading ? "..." : actionLabel}
+      </button>
     </div>
   </div>
 );

@@ -1,11 +1,21 @@
 "use client";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { addPostComment, getAllPosts, getMyPosts, togglePostLike } from "@/lib/api/post";
+import {
+  addPostComment,
+  deletePost,
+  deletePostComment,
+  getAllPosts,
+  getMyPosts,
+  togglePostLike,
+  updatePost,
+} from "@/lib/api/post";
 import { PostCard } from "./PostCard";
 import { FeedSkeleton } from "@/shared/components/FeedSkeleton";
 import type { Post } from "@/features/feed/types";
 import { toast } from "sonner";
 import { useUser } from "@/shared/context/UserContext";
+import { createReport, toggleBlockUser } from "@/lib/api/social";
 
 type FeedProps = {
   scope?: "all" | "my";
@@ -21,6 +31,7 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
   const [cursor, setCursor] = useState<string | null>(null);
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
   const [commentLoadingId, setCommentLoadingId] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const loadPosts = useCallback(
@@ -76,13 +87,21 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
   );
 
   useEffect(() => {
+    if (!user?.userId) {
+      setPosts([]);
+      setCursor(null);
+      setHasMore(false);
+      setLoading(false);
+      return;
+    }
     setPosts([]);
     setCursor(null);
     setHasMore(true);
     void loadPosts("reset", null);
-  }, [scope, loadPosts]);
+  }, [scope, loadPosts, user?.userId]);
 
   useEffect(() => {
+    if (!user?.userId) return;
     if (!hasMore || loading || loadingMore) return;
     const node = loadMoreRef.current;
     if (!node) return;
@@ -99,7 +118,7 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
     observer.observe(node);
 
     return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, loadPosts, cursor]);
+  }, [hasMore, loading, loadingMore, loadPosts, cursor, user?.userId]);
 
   const replacePost = (updated?: Post) => {
     if (!updated?._id) return;
@@ -136,6 +155,102 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
     }
   };
 
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    setActionLoadingId(`comment-${commentId}`);
+    try {
+      const res = await deletePostComment(postId, commentId);
+      replacePost(res.data);
+      toast.success("Comment deleted");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete comment";
+      toast.error(message);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleUpdatePost = async (postId: string, text: string) => {
+    setActionLoadingId(`post-${postId}`);
+    try {
+      const res = await updatePost(postId, { text });
+      replacePost(res.data);
+      toast.success("Post updated");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update post";
+      toast.error(message);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    setActionLoadingId(`post-${postId}`);
+    try {
+      await deletePost(postId);
+      setPosts((prev) => prev.filter((item) => item._id !== postId));
+      toast.success("Post deleted");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete post";
+      toast.error(message);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleReportPost = async (postId: string) => {
+    setActionLoadingId(`report-${postId}`);
+    try {
+      await createReport({
+        targetType: "post",
+        targetId: postId,
+        reason: "Inappropriate content",
+      });
+      toast.success("Post reported");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to report post";
+      toast.error(message);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleBlockUser = async (targetUserId: string) => {
+    setActionLoadingId(`block-${targetUserId}`);
+    try {
+      const res = await toggleBlockUser(targetUserId);
+      if (res.data?.isBlocked) {
+        setPosts((prev) =>
+          prev.filter((post) => {
+            const authorId =
+              typeof post.user === "object" && post.user
+                ? post.user._id
+                : undefined;
+            return authorId !== targetUserId;
+          }),
+        );
+      }
+      toast.success(res.data?.isBlocked ? "User blocked" : "User unblocked");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update block state";
+      toast.error(message);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  if (!user?.userId) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-gray-300">
+        Please <Link href="/login" className="text-blue-600 hover:underline">login</Link> to see your feed.
+      </div>
+    );
+  }
+
   if (loading) return <FeedSkeleton />;
   return (
     <div className="space-y-2 pb-6">
@@ -145,6 +260,8 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
         </div>
       )}
       {posts.map((post, index) => {
+        const authorId =
+          typeof post.user === "object" && post.user ? post.user._id : undefined;
         const userName =
           typeof post.user === "object" && post.user
             ? post.user.name || "Unknown"
@@ -159,6 +276,8 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
         <PostCard
           key={post._id ?? `${post.text}-${index}`}
           postId={post._id}
+          authorId={authorId}
+          currentUserId={user?.userId}
           user={userName}
           time={post.createdAt}
           content={post.text}
@@ -167,8 +286,14 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
           comments={post.comments}
           onLike={handleLike}
           onCommentSubmit={handleCommentSubmit}
+          onDeleteComment={handleDeleteComment}
+          onUpdatePost={handleUpdatePost}
+          onDeletePost={handleDeletePost}
+          onReportPost={handleReportPost}
+          onBlockUser={handleBlockUser}
           likeLoading={likeLoadingId === post._id}
           commentLoading={commentLoadingId === post._id}
+          actionLoading={actionLoadingId === `post-${post._id}` || actionLoadingId === `report-${post._id}` || actionLoadingId === `block-${authorId}`}
           liked={likedByMe}
         />
         );

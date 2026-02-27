@@ -53,6 +53,10 @@ export const createPost = async (
 export const getAllPosts = async (
   params?: FeedQuery,
 ): Promise<FeedPostsResponse> => {
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
   const tenantId = getClientTenantId();
   const suffix = buildFeedQuery(params);
 
@@ -61,6 +65,7 @@ export const getAllPosts = async (
     {
       cache: "no-store",
       headers: {
+        Authorization: `Bearer ${token}`,
         "x-tenant-id": tenantId,
       },
     },
@@ -138,4 +143,87 @@ export const addPostComment = async (
   );
 
   return assertSuccess(data, "Failed to add comment");
+};
+
+export const updatePost = async (
+  postId: string,
+  payload: { text?: string; file?: File | null },
+): Promise<ApiResponse<Post>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const hasFile = !!payload.file;
+  let body: BodyInit | undefined;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    "x-tenant-id": tenantId,
+  };
+
+  if (hasFile) {
+    const formData = new FormData();
+    if (payload.text?.trim()) formData.append("text", payload.text.trim());
+    formData.append("file", payload.file as File);
+    body = formData;
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify({
+      ...(payload.text?.trim() ? { text: payload.text.trim() } : {}),
+    });
+  }
+
+  const data = await requestJson<ApiResponse<Post>>(
+    `${getApiUrl()}/posts/${postId}`,
+    {
+      method: "PATCH",
+      headers,
+      body,
+    },
+  );
+
+  return assertSuccess(data, "Failed to update post");
+};
+
+export const deletePost = async (postId: string): Promise<ApiResponse<null>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const data = await requestJson<ApiResponse<null>>(`${getApiUrl()}/posts/${postId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "x-tenant-id": tenantId,
+    },
+  });
+
+  return assertSuccess(data, "Failed to delete post");
+};
+
+export const deletePostComment = async (
+  postId: string,
+  commentId: string,
+): Promise<ApiResponse<Post>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const data = await requestJson<ApiResponse<Post>>(
+    `${getApiUrl()}/posts/${postId}/comments/${commentId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+      },
+    },
+  );
+
+  return assertSuccess(data, "Failed to delete comment");
 };
