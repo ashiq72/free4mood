@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
-import { getTenantIdFallback } from "@/lib/api/config";
+import { getApiCoreUrl, getTenantIdFallback } from "@/lib/api/config";
 
 const getTenantId = async () => {
   const host = (await headers()).get("host") ?? "";
@@ -57,7 +57,7 @@ export async function PATCH(req: Request) {
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/user-info/update-user-info`,
+      `${getApiCoreUrl()}/users/update-user`,
       {
         method: "PATCH",
         headers,

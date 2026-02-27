@@ -1,6 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { getTenantIdFallback } from "@/lib/api/config";
+import { getApiCoreUrl, getTenantIdFallback } from "@/lib/api/config";
 
 const getTenantId = async () => {
   const host = (await headers()).get("host") ?? "";
@@ -11,23 +11,33 @@ const getTenantId = async () => {
 
 export async function GET() {
   const token = (await cookies()).get("accessToken")?.value;
+  if (!token) {
+    return NextResponse.json(
+      { message: "Access token not found" },
+      { status: 401 },
+    );
+  }
+
   const tenantId = await getTenantId();
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/user-info/me`,
+    `${getApiCoreUrl()}/users/me`,
     {
       headers: {
-        Authorization: `${token}`,
+        Authorization: `Bearer ${token}`,
         "x-tenant-id": tenantId,
       },
       cache: "no-store",
     }
   );
 
+  const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    return NextResponse.json({ error: "Failed" }, { status: 401 });
+    const message =
+      typeof data?.message === "string" ? data.message : "Failed to fetch user";
+    return NextResponse.json({ message }, { status: res.status });
   }
 
-  const data = await res.json();
   return NextResponse.json(data);
 }

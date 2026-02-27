@@ -1,9 +1,17 @@
 import type { ApiResponse } from "./types";
 
 const toErrorMessage = (data: unknown, status: number) => {
-  if (data && typeof data === "object" && "message" in data) {
+  if (data && typeof data === "object") {
     const message = (data as { message?: string }).message;
     if (message) return message;
+
+    const error = (data as { error?: string }).error;
+    if (error) return error;
+
+    const errorSources = (data as { errorSources?: { message?: string }[] })
+      .errorSources;
+    const sourceMessage = errorSources?.[0]?.message;
+    if (sourceMessage) return sourceMessage;
   }
   return `Request failed (${status})`;
 };

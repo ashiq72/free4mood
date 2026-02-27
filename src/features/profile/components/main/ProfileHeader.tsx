@@ -1,15 +1,22 @@
-'use client'
-import EditProfileCoverModal from '@/features/profile/components/modal/EditProfileCoverModal';
-import EditProfileFullModal from '@/features/profile/components/modal/EditProfileFullModal';
-import EditProfileImageModal from '@/features/profile/components/modal/EditProfileImageModal';
-import type { IUserInfo } from '@/features/profile/types';
+﻿"use client";
 
-import { Camera, Grid, ImageIcon, LucideIcon, MoreHorizontal, PenSquare, Users, Video } from 'lucide-react';
-import Image from 'next/image'
-import { useState } from 'react';
+import EditProfileCoverModal from "@/features/profile/components/modal/EditProfileCoverModal";
+import EditProfileFullModal from "@/features/profile/components/modal/EditProfileFullModal";
+import EditProfileImageModal from "@/features/profile/components/modal/EditProfileImageModal";
+import type { IUserInfo } from "@/features/profile/types";
+import {
+  Camera,
+  Grid,
+  ImageIcon,
+  LucideIcon,
+  MoreHorizontal,
+  PenSquare,
+  Users,
+  Video,
+} from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
 
-
-// --- Types & Interfaces ---
 interface TabItem {
   id: string;
   label: string;
@@ -20,20 +27,23 @@ interface ProfileHeaderProps {
   userInfo: IUserInfo | null;
   loading: boolean;
   loadUser: () => void;
+  followStats?: {
+    followers: number;
+    following: number;
+  };
 }
 
-
-
-export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProps) => {
-
-
-
+export const ProfileHeader = ({
+  userInfo,
+  loading,
+  loadUser,
+  followStats,
+}: ProfileHeaderProps) => {
   const [activeTab, setActiveTab] = useState("posts");
   const [openFullModal, setOpenFullModal] = useState(false);
   const [openImageModal, setOpenImageModal] = useState(false);
   const [openCoverModal, setOpenCoverModal] = useState(false);
 
-  
   const tabs: TabItem[] = [
     { id: "posts", label: "Posts", icon: Grid },
     { id: "about", label: "About", icon: Users },
@@ -41,10 +51,11 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
     { id: "photos", label: "Photos", icon: ImageIcon },
     { id: "videos", label: "Videos", icon: Video },
   ];
+
   return (
-    <div><div className="bg-white dark:bg-zinc-900 shadow-sm mb-6">
+    <div>
+      <div className="bg-white dark:bg-zinc-900 shadow-sm mb-6">
         <div className="max-w-7xl mx-auto">
-          {/* Cover Photo */}
           <div className="relative h-64 md:h-80 w-full rounded-b-xl overflow-hidden group">
             <Image
               width={35}
@@ -53,7 +64,6 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
               alt="Cover"
               className="w-full h-full object-cover"
             />
-            {/* Edit Cover Button */}
             <div>
               <button
                 onClick={() => setOpenCoverModal(true)}
@@ -64,7 +74,6 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
                   Edit Cover Photo
                 </span>
               </button>
-              {/* Custom Popup */}
               <EditProfileCoverModal
                 openCoverModal={openCoverModal}
                 onClose={() => setOpenCoverModal(false)}
@@ -77,10 +86,8 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
             </div>
           </div>
 
-          {/* Profile Info Area */}
           <div className="px-4 sm:px-8 pb-4">
             <div className="flex flex-col md:flex-row items-start md:items-end -mt-12 md:-mt-16 gap-6">
-              {/* Profile Picture */}
               <div className="relative">
                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-zinc-900 overflow-hidden bg-gray-200">
                   <Image
@@ -99,16 +106,14 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
                     <Camera className="w-4 h-4 cursor-pointer" />
                   </button>
 
-                  {/* Custom Popup */}
                   <EditProfileImageModal
                     openImageModal={openImageModal}
                     onClose={() => setOpenImageModal(false)}
-                    loadUser={loadUser}  
+                    loadUser={loadUser}
                   />
                 </div>
               </div>
 
-              {/* Name & Headline */}
               <div className="flex-1 mt-2 md:mt-0 md:mb-0">
                 {loading ? (
                   <NameSkeleton />
@@ -119,11 +124,12 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
                     </h1>
 
                     <p className="text-gray-500 dark:text-gray-400 font-medium">
-                      <span>{ userInfo?.bio ? `${userInfo?.bio} • `: '' } </span> 0 followers
+                      <span>{userInfo?.bio ? `${userInfo.bio} - ` : ""}</span>
+                      {followStats?.followers ?? 0} followers - {" "}
+                      {followStats?.following ?? 0} following
                     </p>
                   </>
                 )}
-                {/* Followers Thumbnails (Optional UI Candy) */}
                 <div className="flex items-center gap-1 mt-2">
                   <div className="flex -space-x-2 overflow-hidden">
                     {[1, 2, 3].map((i) => (
@@ -138,12 +144,11 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
                     ))}
                   </div>
                   <span className="text-xs text-gray-500 ml-2">
-                    Followed by DesignTeam + 1 others
+                    Followed by community members
                   </span>
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex items-center gap-3 mt-0 md:mt-0 md:mb-0 w-full md:w-auto">
                 <div>
                   <button
@@ -154,7 +159,6 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
                     Edit Profile
                   </button>
 
-                  {/* Custom Popup */}
                   <EditProfileFullModal
                     openFullModal={openFullModal}
                     onClose={() => setOpenFullModal(false)}
@@ -169,7 +173,6 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
               </div>
             </div>
 
-            {/* Navigation Tabs */}
             <div className="flex items-center gap-1 mt-6 border-t border-gray-200 dark:border-zinc-800 overflow-x-auto no-scrollbar">
               {tabs.map((tab) => (
                 <button
@@ -191,10 +194,10 @@ export const ProfileHeader = ({ userInfo, loading, loadUser }: ProfileHeaderProp
             </div>
           </div>
         </div>
-      </div></div>
-  )
-}
-
+      </div>
+    </div>
+  );
+};
 
 const NameSkeleton = () => (
   <div className="space-y-2">
