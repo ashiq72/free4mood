@@ -12,7 +12,12 @@ export const getCurrentUser = async (): Promise<IUser | null> => {
   if (!accessToken) return null;
 
   try {
-    return jwtDecode<AuthTokenPayload>(accessToken) ?? null;
+    const decoded = jwtDecode<AuthTokenPayload>(accessToken);
+    if (!decoded) return null;
+    if (decoded.exp && decoded.exp <= Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+    return decoded;
   } catch {
     return null;
   }

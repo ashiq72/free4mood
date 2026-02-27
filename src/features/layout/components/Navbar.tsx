@@ -93,8 +93,9 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await logout();
-    window.location.reload();
     setIsUserMenuOpen(false);
+    router.replace("/login");
+    router.refresh();
   };
 
   useEffect(() => {
@@ -259,11 +260,9 @@ export default function Navbar() {
                                   onClick={() => {
                                     setSearchOpen(false);
                                     setSearchText("");
-                                    router.push(
-                                      `/friends?search=${encodeURIComponent(
-                                        item.name || "",
-                                      )}`,
-                                    );
+                                    if (item._id) {
+                                      router.push(`/profile/${item._id}`);
+                                    }
                                   }}
                                   className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800"
                                 >
