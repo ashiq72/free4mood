@@ -37,7 +37,9 @@ export default function Login() {
       toast.success("Login successful");
       router.push("/");
     } catch (err: unknown) {
-      toast.error(err.message || "Something went wrong");
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
