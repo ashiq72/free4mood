@@ -34,6 +34,22 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
+  const normalizeId = (value: unknown): string => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value !== null) {
+      const record = value as Record<string, unknown>;
+      if (typeof record._id === "string") return record._id;
+      if (typeof record.id === "string") return record.id;
+      if (typeof record.$oid === "string") return record.$oid;
+    }
+    if (typeof (value as { toString?: () => string }).toString === "function") {
+      const raw = (value as { toString: () => string }).toString();
+      return raw && raw !== "[object Object]" ? raw : "";
+    }
+    return "";
+  };
+
   const loadPosts = useCallback(
     async (mode: "reset" | "more", cursorValue?: string | null) => {
       try {
@@ -121,9 +137,13 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
   }, [hasMore, loading, loadingMore, loadPosts, cursor, user?.userId]);
 
   const replacePost = (updated?: Post) => {
-    if (!updated?._id) return;
+    const updatedId = normalizeId(updated?._id);
+    if (!updatedId) return;
+    const nextPost = updated as Post;
     setPosts((prev) =>
-      prev.map((item) => (item._id === updated._id ? updated : item)),
+      prev.map((item) =>
+        normalizeId(item._id) === updatedId ? nextPost : item,
+      ),
     );
   };
 
@@ -159,6 +179,19 @@ export const Feed = ({ scope = "all" }: FeedProps) => {
     setActionLoadingId(`comment-${commentId}`);
     try {
       const res = await deletePostComment(postId, commentId);
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (normalizeId(post._id) !== normalizeId(postId)) return post;
+          if (!Array.isArray(post.comments)) return post;
+          return {
+            ...post,
+            comments: post.comments.filter((comment: any) => {
+              const id = normalizeId(comment?._id) || normalizeId(comment?.id);
+              return id !== normalizeId(commentId);
+            }),
+          };
+        }),
+      );
       replacePost(res.data);
       toast.success("Comment deleted");
     } catch (error: unknown) {

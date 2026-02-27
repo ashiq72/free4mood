@@ -213,9 +213,11 @@ export const deletePostComment = async (
   if (!token) {
     throw new Error("Access token not found");
   }
+  const safePostId = encodeURIComponent(postId.trim());
+  const safeCommentId = encodeURIComponent(commentId.trim());
 
   const data = await requestJson<ApiResponse<Post>>(
-    `${getApiUrl()}/posts/${postId}/comments/${commentId}`,
+    `${getApiUrl()}/posts/${safePostId}/comments/${safeCommentId}`,
     {
       method: "DELETE",
       headers: {

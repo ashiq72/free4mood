@@ -8,6 +8,7 @@ export interface Post {
     | number
     | {
         _id?: string;
+        id?: string;
         user?: { _id?: string; name?: string } | string;
         text?: string;
         createdAt?: string;

@@ -6,6 +6,7 @@ import { ActionButton } from "./ActionButton";
 
 type CommentItem = {
   _id?: string;
+  id?: string;
   user?: { _id?: string; name?: string } | string;
   text?: string;
   createdAt?: string;
@@ -36,6 +37,25 @@ type PostCardProps = {
 
 const toCount = (value?: number | unknown[]) =>
   Array.isArray(value) ? value.length : value ?? 0;
+
+const normalizeCommentId = (value: unknown): string | undefined => {
+  if (!value) return undefined;
+  if (typeof value === "string") return value;
+
+  if (typeof value === "object" && value !== null) {
+    const record = value as Record<string, unknown>;
+    if (typeof record._id === "string") return record._id;
+    if (typeof record.id === "string") return record.id;
+    if (typeof record.$oid === "string") return record.$oid;
+  }
+
+  if (typeof (value as { toString?: () => string }).toString === "function") {
+    const raw = (value as { toString: () => string }).toString();
+    return raw && raw !== "[object Object]" ? raw : undefined;
+  }
+
+  return undefined;
+};
 
 export const PostCard = ({
   postId,
@@ -250,6 +270,7 @@ export const PostCard = ({
       {commentList.length > 0 && (
         <div className="px-4 py-2 space-y-2 border-b border-gray-100 dark:border-zinc-800">
           {commentList.map((item, idx) => {
+            const commentId = normalizeCommentId(item._id) || normalizeCommentId(item.id);
             const commenter =
               typeof item.user === "object" && item.user
                 ? item.user.name || "User"
@@ -259,11 +280,11 @@ export const PostCard = ({
             const commentOwnerId =
               typeof item.user === "object" && item.user ? item.user._id : undefined;
             const canDeleteComment =
-              Boolean(postId && item._id && currentUserId) &&
+              Boolean(postId && commentId && currentUserId) &&
               (commentOwnerId === currentUserId || canManagePost);
 
             return (
-              <div key={item._id || `${commenter}-${idx}`} className="flex items-start justify-between gap-3 text-sm text-gray-700 dark:text-gray-200">
+              <div key={commentId || `${commenter}-${idx}`} className="flex items-start justify-between gap-3 text-sm text-gray-700 dark:text-gray-200">
                 <div>
                   <span className="font-semibold">{commenter}: </span>
                   <span>{item.text || ""}</span>
@@ -273,8 +294,8 @@ export const PostCard = ({
                     type="button"
                     className="text-xs text-red-600"
                     onClick={() => {
-                      if (!postId || !item._id || !onDeleteComment) return;
-                      void onDeleteComment(postId, item._id);
+                      if (!postId || !commentId || !onDeleteComment) return;
+                      void onDeleteComment(postId, commentId);
                     }}
                   >
                     Delete
