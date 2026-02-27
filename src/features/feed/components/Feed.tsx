@@ -27,17 +27,25 @@ export const Feed = () => {
   if (loading) return <FeedSkeleton />;
   return (
     <div className="space-y-2 pb-6">
-      {posts.map((post, index) => (
+      {posts.map((post, index) => {
+        const userName =
+          typeof post.user === "object" && post.user
+            ? post.user.name || "Unknown"
+            : typeof post.user === "string"
+              ? post.user
+              : "Unknown";
+        return (
         <PostCard
-          key={post._id ?? `${post.title}-${index}`}
-          user={post.title}
+          key={post._id ?? `${post.text}-${index}`}
+          user={userName}
           time={post.createdAt}
-          content={post.description}
+          content={post.text}
           image={post.image}
           likes={post.likes}
           comments={post.comments}
         />
-      ))}
+        );
+      })}
       
     
       <PostCard

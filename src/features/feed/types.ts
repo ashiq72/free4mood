@@ -1,7 +1,7 @@
 export interface Post {
   _id?: string;
-  title: string;
-  description: string;
+  text: string;
+  user?: { name?: string } | string;
   image?: string;
   likes?: number | unknown[];
   comments?: number | unknown[];
