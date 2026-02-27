@@ -1,18 +1,27 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getAllPosts } from "@/lib/api/post";
+import { addPostComment, getAllPosts, getMyPosts, togglePostLike } from "@/lib/api/post";
 import { PostCard } from "./PostCard";
 import { FeedSkeleton } from "@/shared/components/FeedSkeleton";
 import type { Post } from "@/features/feed/types";
+import { toast } from "sonner";
+import { useUser } from "@/shared/context/UserContext";
 
-export const Feed = () => {
+type FeedProps = {
+  scope?: "all" | "my";
+};
+
+export const Feed = ({ scope = "all" }: FeedProps) => {
+  const { user } = useUser();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
+  const [commentLoadingId, setCommentLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        const res = await getAllPosts();
+        const res = scope === "my" ? await getMyPosts() : await getAllPosts();
         setPosts(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
         console.error("Failed to load posts:", error);
@@ -22,7 +31,42 @@ export const Feed = () => {
     };
 
     loadPosts();
-  }, []);
+  }, [scope]);
+
+  const replacePost = (updated?: Post) => {
+    if (!updated?._id) return;
+    setPosts((prev) =>
+      prev.map((item) => (item._id === updated._id ? updated : item)),
+    );
+  };
+
+  const handleLike = async (postId: string) => {
+    setLikeLoadingId(postId);
+    try {
+      const res = await togglePostLike(postId);
+      replacePost(res.data);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update like";
+      toast.error(message);
+    } finally {
+      setLikeLoadingId(null);
+    }
+  };
+
+  const handleCommentSubmit = async (postId: string, text: string) => {
+    setCommentLoadingId(postId);
+    try {
+      const res = await addPostComment(postId, text);
+      replacePost(res.data);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to add comment";
+      toast.error(message);
+    } finally {
+      setCommentLoadingId(null);
+    }
+  };
 
   if (loading) return <FeedSkeleton />;
   return (
@@ -34,28 +78,28 @@ export const Feed = () => {
             : typeof post.user === "string"
               ? post.user
               : "Unknown";
+        const likedByMe =
+          Array.isArray(post.likes) && !!user?.userId
+            ? post.likes.some((id) => String(id) === String(user.userId))
+            : false;
         return (
         <PostCard
           key={post._id ?? `${post.text}-${index}`}
+          postId={post._id}
           user={userName}
           time={post.createdAt}
           content={post.text}
           image={post.image}
           likes={post.likes}
           comments={post.comments}
+          onLike={handleLike}
+          onCommentSubmit={handleCommentSubmit}
+          likeLoading={likeLoadingId === post._id}
+          commentLoading={commentLoadingId === post._id}
+          liked={likedByMe}
         />
         );
       })}
-      
-    
-      <PostCard
-        user="Safayet Hossain"
-        time="1d ago"
-        content="Working on a new dashboard design. The dark mode contrast is tricky but fun! 🎨"
-        image="https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?q=80&w=2555&auto=format&fit=crop"
-        likes={85}
-        comments={12}
-      />
     </div>
   );
 };

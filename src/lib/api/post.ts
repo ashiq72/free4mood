@@ -55,3 +55,70 @@ export const getAllPosts = async (): Promise<ApiResponse<Post[]>> => {
 
   return assertSuccess(data, "Failed to fetch posts");
 };
+
+export const getMyPosts = async (): Promise<ApiResponse<Post[]>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const data = await requestJson<ApiResponse<Post[]>>(`${getApiUrl()}/posts/my`, {
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "x-tenant-id": tenantId,
+    },
+  });
+
+  return assertSuccess(data, "Failed to fetch your posts");
+};
+
+export const togglePostLike = async (
+  postId: string,
+): Promise<ApiResponse<Post>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const data = await requestJson<ApiResponse<Post>>(
+    `${getApiUrl()}/posts/${postId}/toggle-like`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+      },
+    },
+  );
+
+  return assertSuccess(data, "Failed to update like");
+};
+
+export const addPostComment = async (
+  postId: string,
+  text: string,
+): Promise<ApiResponse<Post>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const data = await requestJson<ApiResponse<Post>>(
+    `${getApiUrl()}/posts/${postId}/comments`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+      },
+      body: JSON.stringify({ text }),
+    },
+  );
+
+  return assertSuccess(data, "Failed to add comment");
+};
