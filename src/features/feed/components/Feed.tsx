@@ -131,6 +131,22 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
   }, [scope, targetUserId, loadPosts, user?.userId]);
 
   useEffect(() => {
+    const handlePostCreated = () => {
+      if (!user?.userId) return;
+      if (scope === "user" && !targetUserId) return;
+      setPosts([]);
+      setCursor(null);
+      setHasMore(true);
+      void loadPosts("reset", null);
+    };
+
+    window.addEventListener("post:created", handlePostCreated);
+    return () => {
+      window.removeEventListener("post:created", handlePostCreated);
+    };
+  }, [loadPosts, scope, targetUserId, user?.userId]);
+
+  useEffect(() => {
     if (!user?.userId) return;
     if (scope === "user" && !targetUserId) return;
     if (!hasMore || loading || loadingMore) return;

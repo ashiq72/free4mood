@@ -1,10 +1,20 @@
 import Navbar from "@/features/layout/components/Navbar";
+import { getCurrentUser } from "@/lib/api/auth.server";
+import Providers from "@/shared/providers/Providers";
+import { redirect } from "next/navigation";
 
-const CommonLayout = ({ children }: { children: React.ReactNode }) => {
+const CommonLayout = async ({ children }: { children: React.ReactNode }) => {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <div>
-      <Navbar />
-      {children}
+      <Providers user={user}>
+        <Navbar />
+        {children}
+      </Providers>
     </div>
   );
 };

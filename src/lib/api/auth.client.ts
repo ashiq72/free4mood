@@ -11,6 +11,12 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface ForgotPasswordPayload {
+  phone: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 type LoginData = {
   accessToken: string;
   [key: string]: unknown;
@@ -77,6 +83,25 @@ export const loginUser = async (
   }
 
   return data;
+};
+
+export const forgotPassword = async (
+  payload: ForgotPasswordPayload,
+): Promise<ApiResponse<null>> => {
+  const tenantId = getClientTenantId();
+  const data = await requestJson<ApiResponse<null>>(
+    `${getApiCoreUrl()}/auth/forgot-password`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-id": tenantId,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  return assertSuccess(data, "Password reset failed");
 };
 
 export const logout = () => {

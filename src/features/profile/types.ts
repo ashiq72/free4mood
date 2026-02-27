@@ -5,6 +5,7 @@ export interface IUserInfo {
   bio?: string;
   location?: string;
   image?: string;
+  coverImage?: string;
   website?: string;
   dateOfBirth?: string;
   createdAt?: string;

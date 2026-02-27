@@ -38,7 +38,7 @@ export const RightSidebar = () => {
       }
       const [friendsRes, incomingRes, outgoingRes, suggestionsRes] =
         await Promise.all([
-          getMyFriends({ limit: 20 }),
+          getMyFriends({ limit: 100 }),
           getIncomingFriendRequests({ limit: 6 }),
           getOutgoingFriendRequests({ limit: 30 }),
           getFollowSuggestions({ limit: 6 }),
@@ -120,6 +120,16 @@ export const RightSidebar = () => {
     return friends.filter((item) => (item.name || "").toLowerCase().includes(q));
   }, [friends, search]);
 
+  const friendIdSet = useMemo(
+    () => new Set(friends.map((friend) => friend._id).filter(Boolean)),
+    [friends],
+  );
+
+  const filteredSuggestions = useMemo(
+    () => suggestions.filter((item) => !friendIdSet.has(item._id)),
+    [suggestions, friendIdSet],
+  );
+
   const pendingOutgoingMap = useMemo(() => {
     const map = new Map<string, string>();
     outgoingRequests.forEach((req) => {
@@ -135,7 +145,7 @@ export const RightSidebar = () => {
     try {
       await acceptFriendRequest(requestId);
       setIncomingRequests((prev) => prev.filter((item) => item._id !== requestId));
-      const friendRes = await getMyFriends({ limit: 20 });
+      const friendRes = await getMyFriends({ limit: 100 });
       setFriends(Array.isArray(friendRes.data) ? friendRes.data : []);
       toast.success("Friend request accepted");
     } catch (error: unknown) {
@@ -163,6 +173,11 @@ export const RightSidebar = () => {
   };
 
   const handleSuggestionAction = async (targetUserId: string) => {
+    if (friendIdSet.has(targetUserId)) {
+      toast.info("Already friends");
+      return;
+    }
+
     const existingRequestId = pendingOutgoingMap.get(targetUserId);
     const actionId = existingRequestId
       ? `cancel-${existingRequestId}`
@@ -185,6 +200,11 @@ export const RightSidebar = () => {
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Failed to update request";
+      if (message.toLowerCase().includes("already friends")) {
+        toast.info("Already friends");
+        await loadSidebarData(true);
+        return;
+      }
       toast.error(message);
     } finally {
       setActionLoadingId(null);
@@ -205,11 +225,11 @@ export const RightSidebar = () => {
 
         {loading ? (
           <p className="text-sm text-gray-500">Loading...</p>
-        ) : suggestions.length === 0 ? (
+        ) : filteredSuggestions.length === 0 ? (
           <p className="text-sm text-gray-500">No suggestions right now.</p>
         ) : (
           <div className="space-y-2">
-            {suggestions.slice(0, 3).map((item) => {
+            {filteredSuggestions.slice(0, 3).map((item) => {
               const requestId = pendingOutgoingMap.get(item._id);
               const loadingId = requestId
                 ? `cancel-${requestId}`
