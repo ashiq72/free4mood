@@ -1,3 +1,5 @@
-export default function page() {
-  return <div>Default</div>;
+import MessagesShell from "@/features/messages/components/MessagesShell";
+
+export default function MessagesPage() {
+  return <MessagesShell />;
 }

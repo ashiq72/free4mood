@@ -92,6 +92,14 @@ export default function Login() {
           {errors.password && (
             <p className="text-red-500 text-xs">{errors.password.message}</p>
           )}
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-xs font-semibold text-blue-700 underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         <p className="text-center text-gray-700 text-sm">

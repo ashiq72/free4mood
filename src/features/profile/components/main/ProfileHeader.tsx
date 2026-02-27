@@ -34,6 +34,7 @@ interface ProfileHeaderProps {
     followers: number;
     following: number;
   };
+  friendCount?: number;
   friendPreview?: FollowUser[];
   coverImage?: string;
   isOwnProfile?: boolean;
@@ -47,6 +48,7 @@ export const ProfileHeader = ({
   loading,
   loadUser,
   followStats,
+  friendCount,
   friendPreview,
   coverImage,
   isOwnProfile = true,
@@ -65,6 +67,14 @@ export const ProfileHeader = ({
     { id: "photos", label: "Photos", icon: ImageIcon, count: tabCounts?.photos },
     { id: "videos", label: "Videos", icon: Video, count: tabCounts?.videos },
   ];
+
+  const followers = Number(followStats?.followers || 0);
+  const following = Number(followStats?.following || 0);
+  const hasFollowStats = followers > 0 || following > 0;
+  const socialText =
+    hasFollowStats || typeof friendCount !== "number"
+      ? `${followers} followers · ${following} following`
+      : `${friendCount} friends`;
 
   return (
     <div className="mb-6">
@@ -97,12 +107,9 @@ export const ProfileHeader = ({
                 <EditProfileCoverModal
                   openCoverModal={openCoverModal}
                   onClose={() => setOpenCoverModal(false)}
-                >
-                  <h2 className="text-xl font-semibold mb-2">Edit Cover Photo</h2>
-                  <p className="text-sm text-zinc-500 mb-4">
-                    Set the dimensions for the layer.
-                  </p>
-                </EditProfileCoverModal>
+                  loadUser={loadUser}
+                  currentCover={coverImage}
+                />
               </div>
             )}
           </div>
@@ -114,7 +121,7 @@ export const ProfileHeader = ({
                   <Image
                     width={160}
                     height={160}
-                    src={userInfo?.image || "https://via.placeholder.com/160"}
+                    src={userInfo?.image || "/default-avatar.svg"}
                     alt="Profile"
                     className="w-full h-full object-cover"
                     unoptimized
@@ -149,8 +156,7 @@ export const ProfileHeader = ({
 
                     <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400 font-medium">
                       <span>{userInfo?.bio ? `${userInfo.bio} · ` : ""}</span>
-                      {followStats?.followers ?? 0} followers ·{" "}
-                      {followStats?.following ?? 0} following
+                      {socialText}
                     </p>
                   </>
                 )}

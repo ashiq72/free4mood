@@ -32,6 +32,7 @@ export default function PublicProfilePage() {
     followers: 0,
     following: 0,
   });
+  const [friendCount, setFriendCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async () => {
@@ -63,6 +64,7 @@ export default function PublicProfilePage() {
         followers: Number(payload?.followStats?.followers || 0),
         following: Number(payload?.followStats?.following || 0),
       });
+      setFriendCount(Number(payload?.friendStats?.friends || 0));
       setFriendsPreview(Array.isArray(followerRes.data) ? followerRes.data : []);
     } catch (error) {
       console.error(error);
@@ -71,6 +73,7 @@ export default function PublicProfilePage() {
       setPhotoPreview([]);
       setVideoPreview([]);
       setFollowStats({ followers: 0, following: 0 });
+      setFriendCount(0);
     } finally {
       setLoading(false);
     }
@@ -100,8 +103,9 @@ export default function PublicProfilePage() {
         loading={loading}
         loadUser={loadProfile}
         followStats={followStats}
+        friendCount={friendCount}
         friendPreview={friendsPreview}
-        coverImage={photoPreview[0]}
+        coverImage={userInfo?.coverImage || photoPreview[0]}
         isOwnProfile={Boolean(user?.userId && user.userId === profileUserId)}
         activeTab={activeTab}
         onTabChange={setActiveTab}

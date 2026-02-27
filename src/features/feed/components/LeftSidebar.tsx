@@ -118,6 +118,11 @@ export const LeftSidebar = () => {
       const suggestionRows = Array.isArray(suggestionRes.data)
         ? suggestionRes.data
         : [];
+      const friendIdSet = new Set(
+        friendRows
+          .map((friend) => friend?._id)
+          .filter((id): id is string => typeof id === "string" && !!id),
+      );
 
       setMe(meData);
       setCounts({
@@ -126,7 +131,9 @@ export const LeftSidebar = () => {
         unreadNotifications: Number(unreadRes.data?.unreadCount || 0),
         posts: postRows.length,
       });
-      setSuggestions(suggestionRows);
+      setSuggestions(
+        suggestionRows.filter((person) => !friendIdSet.has(person._id)),
+      );
     } catch (error: unknown) {
       if (!silent) {
         const message =

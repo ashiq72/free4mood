@@ -75,8 +75,9 @@ export default function Profile() {
         loading={loading}
         loadUser={loadUser}
         followStats={followStats}
+        friendCount={friendsPreview.length}
         friendPreview={friendsPreview}
-        coverImage={photoPreview[0]}
+        coverImage={userInfo?.coverImage || photoPreview[0]}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         tabCounts={{

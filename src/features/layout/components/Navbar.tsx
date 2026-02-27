@@ -1,8 +1,7 @@
 ﻿"use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ElementType } from "react";
 import {
   Bell,
@@ -22,6 +21,9 @@ import {
   searchSocial,
   type SocialSearchResult,
 } from "@/lib/api/social";
+import { getMessageStreamUrl, getUnreadMessageCount } from "@/lib/api/message";
+import { getMe } from "@/lib/api/user";
+import type { IUserInfo } from "@/features/profile/types";
 import { useUser } from "@/shared/context/UserContext";
 
 const NavItem = ({
@@ -76,10 +78,13 @@ export const IconButton = ({
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useUser();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [profileImage, setProfileImage] = useState("/default-avatar.svg");
   const [searchText, setSearchText] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -111,6 +116,31 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setProfileImage("/default-avatar.svg");
+      return;
+    }
+
+    let active = true;
+    const loadProfile = async () => {
+      try {
+        const res = await getMe<IUserInfo>();
+        if (!active) return;
+        setProfileImage(res.data?.image || "/default-avatar.svg");
+      } catch {
+        if (!active) return;
+        setProfileImage("/default-avatar.svg");
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -160,6 +190,67 @@ export default function Navbar() {
       fallbackTimer = window.setInterval(() => {
         void loadUnread();
       }, 30000);
+    }
+
+    return () => {
+      active = false;
+      if (fallbackTimer !== null) {
+        window.clearInterval(fallbackTimer);
+      }
+      if (stream) {
+        stream.close();
+      }
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadMessageCount(0);
+      return;
+    }
+
+    let active = true;
+    let fallbackTimer: number | null = null;
+    let stream: EventSource | null = null;
+
+    const loadUnreadMessages = async () => {
+      try {
+        const res = await getUnreadMessageCount();
+        if (!active) return;
+        setUnreadMessageCount(Number(res.data?.unreadCount || 0));
+      } catch {
+        if (!active) return;
+      }
+    };
+
+    void loadUnreadMessages();
+
+    try {
+      const url = getMessageStreamUrl();
+      stream = new EventSource(url);
+
+      stream.addEventListener("unread_count", (event) => {
+        if (!active) return;
+        try {
+          const data = JSON.parse((event as MessageEvent).data || "{}");
+          setUnreadMessageCount(Number(data?.unreadCount || 0));
+        } catch {
+          // ignore parse errors
+        }
+      });
+
+      stream.onerror = () => {
+        if (!active) return;
+        if (fallbackTimer === null) {
+          fallbackTimer = window.setInterval(() => {
+            void loadUnreadMessages();
+          }, 15000);
+        }
+      };
+    } catch {
+      fallbackTimer = window.setInterval(() => {
+        void loadUnreadMessages();
+      }, 15000);
     }
 
     return () => {
@@ -305,9 +396,21 @@ export default function Navbar() {
 
             <div className="hidden md:flex items-center justify-center flex-1 max-w-xl mx-4">
               <div className="flex items-center space-x-2 w-full justify-between">
-                <NavItem icon={Home} href="/" active />
-                <NavItem icon={Users} href="/friends" />
-                <NavItem icon={Tv} href="/watch" />
+                <NavItem
+                  icon={Home}
+                  href="/"
+                  active={pathname === "/"}
+                />
+                <NavItem
+                  icon={Users}
+                  href="/friends"
+                  active={pathname.startsWith("/friends")}
+                />
+                <NavItem
+                  icon={Tv}
+                  href="/watch"
+                  active={pathname.startsWith("/watch")}
+                />
               </div>
             </div>
 
@@ -316,7 +419,7 @@ export default function Navbar() {
                 <div className="cursor-pointer">
                   <IconButton
                     icon={MessageCircle}
-                    count={0}
+                    count={unreadMessageCount}
                     onClick={() => router.push("/messages")}
                   />
                 </div>
@@ -333,12 +436,11 @@ export default function Navbar() {
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                   >
-                    <Image
+                    <img
                       alt=""
-                      width={36}
-                      height={36}
-                      src="https://picsum.photos/200?random=41"
-                      className="rounded-full object-cover ring-2 ring-white dark:ring-black"
+                      src={profileImage}
+                      className="h-9 w-9 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-black"
+                      onError={() => setProfileImage("/default-avatar.svg")}
                     />
                     <span className="hidden lg:block text-xs font-semibold text-gray-700 dark:text-gray-200">
                       {user?.name}
@@ -348,12 +450,11 @@ export default function Navbar() {
                   {isUserMenuOpen && (
                     <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 p-2">
                       <div className="p-3 mb-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl flex items-center gap-3">
-                        <Image
+                        <img
                           alt=""
-                          width={40}
-                          height={40}
-                          src="https://picsum.photos/200?random=41"
-                          className="rounded-full object-cover"
+                          src={profileImage}
+                          className="h-10 w-10 rounded-full object-cover shrink-0"
+                          onError={() => setProfileImage("/default-avatar.svg")}
                         />
                         <div>
                           <p className="font-semibold text-sm text-gray-900 dark:text-white">

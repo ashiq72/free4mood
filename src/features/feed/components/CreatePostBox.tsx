@@ -1,193 +1,284 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/shared/ui/popover";
-import { ImageIcon, Smile, Video } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/shared/ui/dialog";
+import { ImageIcon, Smile, Video, X } from "lucide-react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { createPost } from "@/lib/api/post";
 import { useUser } from "@/shared/context/UserContext";
 import { QUICK_EMOJIS } from "@/features/feed/constants/emoji";
+import { useRouter } from "next/navigation";
+import { getMe } from "@/lib/api/user";
+import type { IUserInfo } from "@/features/profile/types";
 
 export const CreatePostBox = () => {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [profileImage, setProfileImage] = useState("/default-avatar.svg");
   const { user } = useUser();
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
-  // 👉 handle image selection
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
+  useEffect(() => {
+    if (!user?.userId) {
+      setProfileImage("/default-avatar.svg");
+      return;
+    }
+
+    let active = true;
+    const loadProfile = async () => {
+      try {
+        const res = await getMe<IUserInfo>();
+        if (!active) return;
+        setProfileImage(res.data?.image || "/default-avatar.svg");
+      } catch {
+        if (!active) return;
+        setProfileImage("/default-avatar.svg");
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [user?.userId]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
+
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
 
     setFile(selected);
     setPreview(URL.createObjectURL(selected));
   };
 
+  const clearSelectedMedia = () => {
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+    setFile(null);
+    setPreview(null);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = description.trim();
+    if (!trimmed) {
+      toast.error("Write something before posting");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // ⭐ MUST USE FormData for image upload
       const formData = new FormData();
-      formData.append("text", description);
+      formData.append("text", trimmed);
 
       if (file) {
-        formData.append("file", file); // MUST MATCH multer.single("file")
+        formData.append("file", file);
       }
 
       await createPost(formData);
-
-      toast.success("Post created!");
+      toast.success("Post created successfully");
 
       setDescription("");
-      setFile(null);
-      setPreview(null);
+      clearSelectedMedia();
       setShowEmojiPicker(false);
       setOpen(false);
 
-      // reload feed
-      window.location.reload();
-    } catch (error: Error | unknown) {
-      const message = error instanceof Error ? error.message : "Something went wrong";
+      window.dispatchEvent(new CustomEvent("post:created"));
+      router.refresh();
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
       toast.error(message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <Popover
+    <Dialog
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
         if (!next) setShowEmojiPicker(false);
       }}
     >
-      <PopoverTrigger asChild>
+      <DialogTrigger asChild>
         <div
-          onClick={() => {
+          onClick={(e) => {
             if (!user) {
-              window.location.href = "/login";
-              return;
+              e.preventDefault();
+              router.push("/login");
             }
           }}
-          className="flex items-center gap-3 bg-white dark:bg-zinc-900 border rounded-2xl p-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          className="flex items-center gap-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
         >
-          <Image
-            src="https://picsum.photos/200?random=41"
+          <img
+            src={profileImage}
             width={40}
             height={40}
-            className="rounded-full"
+            className="h-10 w-10 rounded-full object-cover"
             alt="User avatar"
           />
-          <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full px-4 py-2 text-zinc-500">
-            What is on your mind?
+          <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full px-4 py-2 text-sm text-zinc-500">
+            {"What's on your mind?"}
           </div>
         </div>
-      </PopoverTrigger>
+      </DialogTrigger>
 
-      {/* POPUP */}
-      <PopoverContent
-        side="bottom"
-        align="center"
-        className="w-[350px] sm:w-[420px] md:w-[670px] rounded-2xl p-0 border-none shadow-2xl bg-white dark:bg-zinc-900"
+      <DialogContent
+        showCloseButton={false}
+        className="w-[96vw] max-w-2xl rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
       >
-        <AnimatePresence>
-          {open && (
-            <motion.form
-              onSubmit={handleCreatePost}
-              initial={{ opacity: 0, scale: 0.92, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: -10 }}
-              transition={{ duration: 0.18 }}
-              className="p-5 space-y-4"
-              encType="multipart/form-data"
-            >
-              {/* TEXT INPUT */}
-              <textarea
-                autoFocus
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Write your post..."
-                className="w-full h-32 bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 resize-none outline-none"
-              />
+        <DialogHeader className="border-b border-gray-200 p-4 dark:border-zinc-800">
+          <DialogTitle className="text-center text-lg font-semibold text-gray-900 dark:text-white">
+            Create post
+          </DialogTitle>
+        </DialogHeader>
 
-              {/* IMAGE PREVIEW */}
-              {preview && (
-                <div className="w-full">
-                  <Image
-                    src={preview}
-                    width={600}
-                    height={400}
-                    alt="Preview"
-                    className="rounded-xl object-cover max-h-[300px] w-full"
-                  />
-                </div>
+        <form onSubmit={handleCreatePost} className="p-4 sm:p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <img
+              src={profileImage}
+              width={44}
+              height={44}
+              className="h-11 w-11 rounded-full object-cover"
+              alt="User avatar"
+            />
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                {user?.name || "You"}
+              </p>
+              <p className="text-xs text-gray-500">Public</p>
+            </div>
+          </div>
+
+          <textarea
+            autoFocus
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={`What's on your mind, ${user?.name?.split(" ")[0] || "friend"}?`}
+            className="w-full min-h-[140px] sm:min-h-[170px] bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 resize-none outline-none text-sm sm:text-base"
+          />
+
+          {preview && (
+            <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700">
+              <button
+                type="button"
+                onClick={clearSelectedMedia}
+                className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/75"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              {file?.type.startsWith("video/") ? (
+                <video
+                  src={preview}
+                  controls
+                  className="max-h-[360px] w-full bg-black"
+                />
+              ) : (
+                <Image
+                  src={preview}
+                  width={900}
+                  height={540}
+                  alt="Preview"
+                  className="max-h-[360px] w-full object-cover"
+                />
               )}
-
-              {/* ACTIONS */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-300">
-                  {/* IMAGE UPLOAD BUTTON */}
-                  <label className="cursor-pointer">
-                    <ImageIcon size={22} />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-
-                  <Video size={20} />
-                  <button
-                    type="button"
-                    onClick={() => setShowEmojiPicker((prev) => !prev)}
-                    className="cursor-pointer"
-                  >
-                    <Smile size={20} />
-                  </button>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {loading ? "Posting..." : "Post"}
-                </button>
-              </div>
-
-              {showEmojiPicker && (
-                <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-700 dark:bg-zinc-800">
-                  <div className="grid grid-cols-8 gap-1">
-                    {QUICK_EMOJIS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => setDescription((prev) => `${prev}${emoji}`)}
-                        className="rounded-md p-1 text-lg hover:bg-white dark:hover:bg-zinc-700"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </motion.form>
+            </div>
           )}
-        </AnimatePresence>
-      </PopoverContent>
-    </Popover>
+
+          <div className="rounded-xl border border-gray-200 p-3 dark:border-zinc-700">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 cursor-pointer dark:bg-green-900/20 dark:text-green-300">
+                <ImageIcon className="h-4 w-4" />
+                Photo
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => toast.info("Video upload will be available soon")}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 cursor-pointer dark:bg-blue-900/20 dark:text-blue-300"
+              >
+                <Video className="h-4 w-4" />
+                Video
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker((prev) => !prev)}
+                className="inline-flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300"
+              >
+                <Smile className="h-4 w-4" />
+                Feeling
+              </button>
+            </div>
+          </div>
+
+          {showEmojiPicker && (
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-700 dark:bg-zinc-800">
+              <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
+                {QUICK_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setDescription((prev) => `${prev}${emoji}`)}
+                    className="rounded-md p-1 text-lg hover:bg-white dark:hover:bg-zinc-700"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-gray-500">
+              {description.trim().length}/2000
+            </span>
+            <button
+              type="submit"
+              disabled={loading || !description.trim()}
+              className="min-w-[110px] rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loading ? "Posting..." : "Post"}
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };

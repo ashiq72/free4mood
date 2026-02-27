@@ -76,6 +76,19 @@ export default function FriendsPage() {
       ),
     [incomingRequests],
   );
+  const friendIdSet = useMemo(
+    () =>
+      new Set(
+        friends
+          .map((item) => item._id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    [friends],
+  );
+  const filteredSuggestions = useMemo(
+    () => suggestions.filter((person) => !friendIdSet.has(person._id)),
+    [suggestions, friendIdSet],
+  );
 
   const loadSuggestions = async (mode: LoadMode) => {
     const res = await getFollowSuggestions({
@@ -171,6 +184,11 @@ export default function FriendsPage() {
   }, [search, user?.userId]);
 
   const handleFriendRequestToggle = async (targetUserId: string) => {
+    if (friendIdSet.has(targetUserId)) {
+      toast.info("Already friends");
+      return;
+    }
+
     setActionLoadingId(`request-${targetUserId}`);
     try {
       const existing = outgoingRequests.find((item) => item.to?._id === targetUserId);
@@ -194,9 +212,11 @@ export default function FriendsPage() {
         toast.error("This user already sent you a request. Open Requests tab.");
         setActiveTab("requests");
         router.push("/friends/requests");
+      } else if (lower.includes("already friends")) {
+        await Promise.all([loadRequestSnapshots(), loadFriends("reset"), loadSuggestions("reset")]);
+        toast.info("Already friends");
       } else if (
         lower.includes("already sent") ||
-        lower.includes("already friends") ||
         lower.includes("conflict")
       ) {
         await Promise.all([loadRequestSnapshots(), loadFriends("reset")]);
@@ -300,7 +320,7 @@ export default function FriendsPage() {
           {activeTab === "suggestions" && (
             <section>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {suggestions.map((person) => {
+                {filteredSuggestions.map((person) => {
                   const isRequested = requestedSet.has(person._id);
                   const hasIncomingRequest = incomingRequesterSet.has(person._id);
                   return (
@@ -326,7 +346,7 @@ export default function FriendsPage() {
                     />
                   );
                 })}
-                {suggestions.length === 0 && (
+                {filteredSuggestions.length === 0 && (
                   <EmptyState message="No suggestions available" />
                 )}
               </div>

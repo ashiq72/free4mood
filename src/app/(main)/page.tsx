@@ -2,7 +2,6 @@ import { CreatePostBox } from "@/features/feed/components/CreatePostBox";
 import { Feed } from "@/features/feed/components/Feed";
 import { LeftSidebar } from "@/features/feed/components/LeftSidebar";
 import { RightSidebar } from "@/features/feed/components/RightSidebar";
-import { Stories } from "@/features/feed/components/Stories";
 
 export default function Home() {
   return (
@@ -13,9 +12,8 @@ export default function Home() {
           <LeftSidebar />
         </div>
 
-        {/* --- MIDDLE (Feed & Stories) --- */}
+        {/* --- MIDDLE (Feed) --- */}
         <div className="flex-1 min-w-0 max-w-[700px] mx-auto">
-          <Stories />
           <div className="pb-1">
             <CreatePostBox />
           </div>

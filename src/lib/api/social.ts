@@ -76,9 +76,13 @@ export type SocialProfilePayload = {
     location?: string;
     dateOfBirth?: string;
     image?: string;
+    coverImage?: string;
     createdAt?: string;
   };
   followStats: FollowStats;
+  friendStats?: {
+    friends: number;
+  };
   photos: string[];
 };
 
