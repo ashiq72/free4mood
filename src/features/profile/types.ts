@@ -1,4 +1,5 @@
 export interface IUserInfo {
+  _id?: string;
   name: string;
   about: string;
   bio: string;

@@ -16,6 +16,7 @@ import {
 import { useUser } from "@/shared/context/UserContext";
 import { logout } from "@/lib/api/auth.client";
 import Image from "next/image";
+import { getUnreadNotificationCount } from "@/lib/api/social";
 
 const NavItem = ({
   icon: Icon,
@@ -75,6 +76,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
 
 export default function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
@@ -101,6 +103,36 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    let active = true;
+
+    const loadUnread = async () => {
+      try {
+        const res = await getUnreadNotificationCount();
+        if (!active) return;
+        setUnreadCount(Number(res.data?.unreadCount || 0));
+      } catch {
+        if (!active) return;
+        setUnreadCount(0);
+      }
+    };
+
+    void loadUnread();
+    const timer = window.setInterval(() => {
+      void loadUnread();
+    }, 30000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [user]);
 
   const userMenuItems = [
     { name: "Your Profile", href: "/profile", icon: User },
@@ -150,10 +182,18 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center gap-2 sm:gap-4  ">
                 <div className="cursor-pointer">
-                  <IconButton icon={MessageCircle} count={0} />
+                  <IconButton
+                    icon={MessageCircle}
+                    count={0}
+                    onClick={() => (window.location.href = "/messages")}
+                  />
                 </div>
                 <div className="cursor-pointer">
-                  <IconButton icon={Bell} count={0} />
+                  <IconButton
+                    icon={Bell}
+                    count={unreadCount}
+                    onClick={() => (window.location.href = "/notifications")}
+                  />
                 </div>
                 {/* Profile OR Login */}
 

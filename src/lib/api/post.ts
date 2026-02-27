@@ -1,23 +1,30 @@
 "use client";
 
 import { assertSuccess, requestJson } from "./client";
-import { getApiUrl, getTenantIdFallback } from "./config";
+import { getApiUrl } from "./config";
 import type { ApiResponse } from "./types";
 import type { Post } from "@/features/feed/types";
+import { getAccessToken, getClientTenantId } from "./session";
 
-const getClientTenantId = () => {
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    const parts = host.split(".");
-    if (parts.length > 1 && parts[0]) return parts[0];
-  }
-  return getTenantIdFallback();
+export type FeedPostsResponse = ApiResponse<Post[]> & {
+  meta?: {
+    limit?: number;
+    hasMore?: boolean;
+    nextCursor?: string | null;
+  };
 };
 
-const getAccessToken = () => {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+type FeedQuery = {
+  limit?: number;
+  cursor?: string;
+};
+
+const buildFeedQuery = (params?: FeedQuery) => {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.cursor) query.set("cursor", params.cursor);
+  const qs = query.toString();
+  return qs ? `?${qs}` : "";
 };
 
 export const createPost = async (
@@ -43,33 +50,43 @@ export const createPost = async (
   ).then((data) => assertSuccess(data, "Failed to create post"));
 };
 
-export const getAllPosts = async (): Promise<ApiResponse<Post[]>> => {
+export const getAllPosts = async (
+  params?: FeedQuery,
+): Promise<FeedPostsResponse> => {
   const tenantId = getClientTenantId();
+  const suffix = buildFeedQuery(params);
 
-  const data = await requestJson<ApiResponse<Post[]>>(`${getApiUrl()}/posts/`, {
-    cache: "no-store",
-    headers: {
-      "x-tenant-id": tenantId,
+  const data = await requestJson<FeedPostsResponse>(
+    `${getApiUrl()}/posts${suffix}`,
+    {
+      cache: "no-store",
+      headers: {
+        "x-tenant-id": tenantId,
+      },
     },
-  });
+  );
 
   return assertSuccess(data, "Failed to fetch posts");
 };
 
-export const getMyPosts = async (): Promise<ApiResponse<Post[]>> => {
+export const getMyPosts = async (params?: FeedQuery): Promise<FeedPostsResponse> => {
   const tenantId = getClientTenantId();
   const token = getAccessToken();
+  const suffix = buildFeedQuery(params);
   if (!token) {
     throw new Error("Access token not found");
   }
 
-  const data = await requestJson<ApiResponse<Post[]>>(`${getApiUrl()}/posts/my`, {
-    cache: "no-store",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "x-tenant-id": tenantId,
+  const data = await requestJson<FeedPostsResponse>(
+    `${getApiUrl()}/posts/my${suffix}`,
+    {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+      },
     },
-  });
+  );
 
   return assertSuccess(data, "Failed to fetch your posts");
 };
