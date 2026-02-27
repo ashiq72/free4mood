@@ -4,6 +4,7 @@ import EditProfileCoverModal from "@/features/profile/components/modal/EditProfi
 import EditProfileFullModal from "@/features/profile/components/modal/EditProfileFullModal";
 import EditProfileImageModal from "@/features/profile/components/modal/EditProfileImageModal";
 import type { IUserInfo, ProfileTabKey } from "@/features/profile/types";
+import { startConversation } from "@/lib/api/message";
 import type { FollowUser } from "@/lib/api/social";
 import {
   Camera,
@@ -11,6 +12,7 @@ import {
   Grid,
   ImageIcon,
   LucideIcon,
+  MessageCircle,
   MoreHorizontal,
   PenSquare,
   Users,
@@ -18,6 +20,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface TabItem {
   id: ProfileTabKey;
@@ -56,9 +60,11 @@ export const ProfileHeader = ({
   onTabChange,
   tabCounts,
 }: ProfileHeaderProps) => {
+  const router = useRouter();
   const [openFullModal, setOpenFullModal] = useState(false);
   const [openImageModal, setOpenImageModal] = useState(false);
   const [openCoverModal, setOpenCoverModal] = useState(false);
+  const [messageLoading, setMessageLoading] = useState(false);
 
   const tabs: TabItem[] = [
     { id: "posts", label: "Posts", icon: Grid, count: tabCounts?.posts },
@@ -75,6 +81,27 @@ export const ProfileHeader = ({
     hasFollowStats || typeof friendCount !== "number"
       ? `${followers} followers · ${following} following`
       : `${friendCount} friends`;
+
+  const handleOpenMessage = async () => {
+    const targetUserId = userInfo?._id;
+    if (!targetUserId || isOwnProfile) return;
+
+    try {
+      setMessageLoading(true);
+      const res = await startConversation(targetUserId);
+      const conversationId = res.data?._id;
+      if (!conversationId) {
+        throw new Error("Conversation not found");
+      }
+      router.push(`/messages/${conversationId}`);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to open message";
+      toast.error(message);
+    } finally {
+      setMessageLoading(false);
+    }
+  };
 
   return (
     <div className="mb-6">
@@ -209,6 +236,19 @@ export const ProfileHeader = ({
 
                   <button className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-colors">
                     <MoreHorizontal className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+              {!isOwnProfile && (
+                <div className="flex items-center gap-2 sm:gap-3 mt-0 md:mt-0 md:mb-0 w-full md:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => void handleOpenMessage()}
+                    disabled={messageLoading}
+                    className="px-4 sm:px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {messageLoading ? "Opening..." : "Message"}
                   </button>
                 </div>
               )}

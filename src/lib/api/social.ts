@@ -23,6 +23,7 @@ export type FollowUser = {
   name: string;
   username?: string;
   image?: string;
+  profileImage?: string;
   bio?: string;
 };
 

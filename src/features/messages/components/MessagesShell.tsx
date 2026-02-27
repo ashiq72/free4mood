@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -104,6 +105,8 @@ export default function MessagesShell({
       activeConversation,
     [conversations, selectedConversationId, activeConversation],
   );
+  const getProfileHref = (userId?: string) =>
+    userId ? `/profile/${userId}` : "/profile";
 
   const scrollToBottom = () => {
     if (!messageListRef.current) return;
@@ -528,27 +531,37 @@ export default function MessagesShell({
                 ) : newChatUsers.length ? (
                   <div className="space-y-1">
                     {newChatUsers.map((candidate) => (
-                      <button
-                        type="button"
+                      <div
                         key={candidate._id}
-                        onClick={() => void handleStartConversation(candidate._id)}
-                        disabled={startingUserId === candidate._id}
-                        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-white dark:hover:bg-zinc-800 disabled:opacity-60"
+                        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-white dark:hover:bg-zinc-800"
                       >
-                        <img
-                          src={candidate.image || DEFAULT_AVATAR}
-                          alt={candidate.name || "User"}
-                          className="h-9 w-9 rounded-full object-cover"
-                        />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                            {candidate.name || "Unknown user"}
-                          </p>
-                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                            {candidate.bio || "Tap to start a conversation"}
-                          </p>
-                        </div>
-                      </button>
+                        <Link
+                          href={getProfileHref(candidate._id)}
+                          className="flex min-w-0 flex-1 items-center gap-3 cursor-pointer"
+                        >
+                          <img
+                            src={candidate.image || DEFAULT_AVATAR}
+                            alt={candidate.name || "User"}
+                            className="h-9 w-9 rounded-full object-cover"
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-gray-900 dark:text-white hover:underline">
+                              {candidate.name || "Unknown user"}
+                            </p>
+                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                              {candidate.bio || "Tap to start a conversation"}
+                            </p>
+                          </div>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => void handleStartConversation(candidate._id)}
+                          disabled={startingUserId === candidate._id}
+                          className="rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-zinc-700 dark:text-gray-200 dark:hover:bg-zinc-700"
+                        >
+                          {startingUserId === candidate._id ? "..." : "Chat"}
+                        </button>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -584,43 +597,48 @@ export default function MessagesShell({
                   const isSelected = selectedConversationId === conversation._id;
                   return (
                     <li key={conversation._id}>
-                      <button
-                        type="button"
+                      <div
                         onClick={() => handleConversationSelect(conversation._id)}
                         className={`flex w-full items-center gap-3 px-4 py-3 text-left transition ${
                           isSelected
                             ? "bg-blue-50 dark:bg-blue-900/20"
                             : "hover:bg-gray-50 dark:hover:bg-zinc-800/60"
-                        }`}
+                        } cursor-pointer`}
                       >
-                        <div className="relative shrink-0">
-                          <img
-                            src={participant?.image || DEFAULT_AVATAR}
-                            alt={participant?.name || "User"}
-                            className="h-11 w-11 rounded-full object-cover"
-                          />
-                          {conversation.unreadCount > 0 && (
-                            <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold text-white">
-                              {conversation.unreadCount > 99
-                                ? "99+"
-                                : conversation.unreadCount}
-                            </span>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                              {participant?.name || "Unknown user"}
-                            </p>
-                            <span className="shrink-0 text-[11px] text-gray-500 dark:text-gray-400">
-                              {formatTime(conversation.lastMessageAt)}
-                            </span>
+                        <Link
+                          href={getProfileHref(participant?._id)}
+                          onClick={(event) => event.stopPropagation()}
+                          className="flex min-w-0 flex-1 items-center gap-3 cursor-pointer"
+                        >
+                          <div className="relative shrink-0">
+                            <img
+                              src={participant?.image || DEFAULT_AVATAR}
+                              alt={participant?.name || "User"}
+                              className="h-11 w-11 rounded-full object-cover"
+                            />
+                            {conversation.unreadCount > 0 && (
+                              <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold text-white">
+                                {conversation.unreadCount > 99
+                                  ? "99+"
+                                  : conversation.unreadCount}
+                              </span>
+                            )}
                           </div>
-                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                            {conversation.lastMessageText || "No messages yet"}
-                          </p>
-                        </div>
-                      </button>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="truncate text-sm font-semibold text-gray-900 hover:underline dark:text-white">
+                                {participant?.name || "Unknown user"}
+                              </p>
+                              <span className="shrink-0 text-[11px] text-gray-500 dark:text-gray-400">
+                                {formatTime(conversation.lastMessageAt)}
+                              </span>
+                            </div>
+                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                              {conversation.lastMessageText || "No messages yet"}
+                            </p>
+                          </div>
+                        </Link>
+                      </div>
                     </li>
                   );
                 })}
@@ -650,20 +668,25 @@ export default function MessagesShell({
           ) : (
             <div className="flex h-[75vh] flex-col">
               <header className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 dark:border-zinc-800">
-                <img
-                  src={selectedConversation.otherParticipant?.image || DEFAULT_AVATAR}
-                  alt={selectedConversation.otherParticipant?.name || "User"}
-                  className="h-11 w-11 rounded-full object-cover"
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                    {selectedConversation.otherParticipant?.name || "Unknown user"}
-                  </p>
-                  <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                    {selectedConversation.otherParticipant?.bio ||
-                      "Direct conversation"}
-                  </p>
-                </div>
+                <Link
+                  href={getProfileHref(selectedConversation.otherParticipant?._id)}
+                  className="flex min-w-0 items-center gap-3 cursor-pointer"
+                >
+                  <img
+                    src={selectedConversation.otherParticipant?.image || DEFAULT_AVATAR}
+                    alt={selectedConversation.otherParticipant?.name || "User"}
+                    className="h-11 w-11 rounded-full object-cover"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-900 hover:underline dark:text-white">
+                      {selectedConversation.otherParticipant?.name || "Unknown user"}
+                    </p>
+                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                      {selectedConversation.otherParticipant?.bio ||
+                        "Direct conversation"}
+                    </p>
+                  </div>
+                </Link>
               </header>
 
               <div

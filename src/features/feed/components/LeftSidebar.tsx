@@ -32,6 +32,14 @@ type SidebarCounts = {
   posts: number;
 };
 
+const DEFAULT_AVATAR = "/default-avatar.svg";
+const getUserImage = (user?: FollowUser | IUserInfo | null) =>
+  (user as { image?: string; profileImage?: string } | null | undefined)
+    ?.image ||
+  (user as { image?: string; profileImage?: string } | null | undefined)
+    ?.profileImage ||
+  DEFAULT_AVATAR;
+
 const menuItems: Array<{
   key: keyof SidebarCounts | null;
   href: string;
@@ -231,7 +239,7 @@ export const LeftSidebar = () => {
       >
         <div className="flex items-center gap-3">
           <img
-            src={me?.image || "https://picsum.photos/200?random=41"}
+            src={getUserImage(me)}
             alt="User"
             className="h-11 w-11 rounded-full object-cover"
           />
@@ -317,7 +325,7 @@ export const LeftSidebar = () => {
                 className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-gray-100 dark:hover:bg-zinc-800"
               >
                 <img
-                  src={person.image || "https://picsum.photos/100?random=66"}
+                  src={getUserImage(person)}
                   alt={person.name || "User"}
                   className="h-9 w-9 rounded-full object-cover"
                 />
