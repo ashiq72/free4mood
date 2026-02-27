@@ -18,6 +18,14 @@ import {
   type FriendRequestItem,
 } from "@/lib/api/social";
 
+const DEFAULT_AVATAR = "/default-avatar.svg";
+const getUserImage = (user?: FollowUser | null) =>
+  (user as { image?: string; profileImage?: string } | null | undefined)
+    ?.image ||
+  (user as { image?: string; profileImage?: string } | null | undefined)
+    ?.profileImage ||
+  DEFAULT_AVATAR;
+
 export const RightSidebar = () => {
   const [friends, setFriends] = useState<FollowUser[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<FriendRequestItem[]>(
@@ -245,7 +253,7 @@ export const RightSidebar = () => {
                     className="mb-2 flex items-center gap-2"
                   >
                     <img
-                      src={item.image || "https://picsum.photos/100?random=75"}
+                      src={getUserImage(item)}
                       alt={item.name || "User"}
                       className="h-10 w-10 rounded-full object-cover"
                     />
@@ -310,7 +318,7 @@ export const RightSidebar = () => {
                 >
                   <div className="mb-2 flex items-center gap-2">
                     <img
-                      src={from.image || "https://picsum.photos/100?random=88"}
+                      src={getUserImage(from)}
                       className="h-10 w-10 rounded-full object-cover"
                       alt={from.name || "Requester"}
                     />
@@ -395,7 +403,7 @@ export const RightSidebar = () => {
               >
                 <div className="relative">
                   <img
-                    src={friend.image || "https://picsum.photos/100?random=95"}
+                    src={getUserImage(friend)}
                     className="h-9 w-9 rounded-full object-cover"
                     alt={friend.name || "Friend"}
                   />

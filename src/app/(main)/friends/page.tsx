@@ -25,6 +25,13 @@ import {
 import { toast } from "sonner";
 
 const PAGE_SIZE = 12;
+const DEFAULT_AVATAR = "/default-avatar.svg";
+const getUserImage = (user?: FollowUser | null) =>
+  (user as { image?: string; profileImage?: string } | null | undefined)
+    ?.image ||
+  (user as { image?: string; profileImage?: string } | null | undefined)
+    ?.profileImage ||
+  DEFAULT_AVATAR;
 
 type ActiveTab = "suggestions" | "requests" | "friends";
 
@@ -394,12 +401,13 @@ export default function FriendsPage() {
             <section>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {friends.map((person) => (
-                  <div
+                  <Link
                     key={person._id}
-                    className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800"
+                    href={`/profile/${person._id}`}
+                    className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition cursor-pointer"
                   >
                     <img
-                      src={person.image || "https://picsum.photos/200?random=21"}
+                      src={getUserImage(person)}
                       alt={person.name}
                       className="w-16 h-16 rounded-full object-cover"
                     />
@@ -411,7 +419,7 @@ export default function FriendsPage() {
                         {person.bio || "No bio yet"}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
                 {friends.length === 0 && (
                   <EmptyState message="No friends yet. Send requests from Suggestions." />
@@ -452,10 +460,13 @@ const UserCard = ({
   loading?: boolean;
   disabled?: boolean;
 }) => (
-  <div className="bg-white dark:bg-zinc-900 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-zinc-800">
+  <Link
+    href={`/profile/${person._id}`}
+    className="block bg-white dark:bg-zinc-900 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition cursor-pointer"
+  >
     <div className="aspect-square relative cursor-pointer group">
       <img
-        src={person.image || "https://picsum.photos/200?random=12"}
+        src={getUserImage(person)}
         alt={person.name}
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
       />
@@ -468,7 +479,11 @@ const UserCard = ({
         {person.bio || "No bio yet"}
       </p>
       <button
-        onClick={onAction}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onAction();
+        }}
         disabled={loading || disabled}
         className="w-full py-1.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
       >
@@ -476,7 +491,7 @@ const UserCard = ({
         {loading ? "..." : actionLabel}
       </button>
     </div>
-  </div>
+  </Link>
 );
 
 const EmptyState = ({ message }: { message: string }) => (

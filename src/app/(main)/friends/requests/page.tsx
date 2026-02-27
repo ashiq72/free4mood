@@ -18,6 +18,9 @@ type ActiveTab = "received" | "sent";
 type LoadMode = "reset" | "more";
 
 const PAGE_SIZE = 12;
+const DEFAULT_AVATAR = "/default-avatar.svg";
+const getUserImage = (user?: { image?: string; profileImage?: string } | null) =>
+  user?.image || user?.profileImage || DEFAULT_AVATAR;
 
 const timeAgo = (value?: string) => {
   if (!value) return "";
@@ -260,14 +263,23 @@ export default function FriendRequestsPage() {
                   className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 flex gap-4"
                 >
                   <img
-                    src={req.from?.image || "https://picsum.photos/200?random=101"}
+                    src={getUserImage(req.from)}
                     alt={req.from?.name || "User"}
                     className="w-20 h-20 rounded-lg object-cover"
                   />
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">
-                      {req.from?.name || "Unknown user"}
-                    </h3>
+                    {req.from?._id ? (
+                      <Link
+                        href={`/profile/${req.from._id}`}
+                        className="font-semibold text-gray-900 dark:text-white text-base truncate hover:underline cursor-pointer"
+                      >
+                        {req.from?.name || "Unknown user"}
+                      </Link>
+                    ) : (
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">
+                        {req.from?.name || "Unknown user"}
+                      </h3>
+                    )}
                     <p className="text-xs text-gray-500 mb-2">
                       {timeAgo(req.createdAt)}
                     </p>
@@ -304,14 +316,23 @@ export default function FriendRequestsPage() {
                   className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 flex gap-4 items-center"
                 >
                   <img
-                    src={req.to?.image || "https://picsum.photos/200?random=301"}
+                    src={getUserImage(req.to)}
                     alt={req.to?.name || "User"}
                     className="w-16 h-16 rounded-full object-cover border border-gray-100 dark:border-zinc-700"
                   />
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">
-                      {req.to?.name || "Unknown user"}
-                    </h3>
+                    {req.to?._id ? (
+                      <Link
+                        href={`/profile/${req.to._id}`}
+                        className="font-semibold text-gray-900 dark:text-white text-base truncate hover:underline cursor-pointer"
+                      >
+                        {req.to?.name || "Unknown user"}
+                      </Link>
+                    ) : (
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">
+                        {req.to?.name || "Unknown user"}
+                      </h3>
+                    )}
                     <p className="text-xs text-gray-500 mb-3">
                       Sent {timeAgo(req.createdAt)}
                     </p>

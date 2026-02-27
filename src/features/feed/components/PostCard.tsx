@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { QUICK_EMOJIS } from "@/features/feed/constants/emoji";
 import { ActionButton } from "./ActionButton";
@@ -104,6 +105,7 @@ export const PostCard = ({
   const canManagePost = Boolean(
     postId && currentUserId && authorId && currentUserId === authorId,
   );
+  const authorProfileHref = authorId ? `/profile/${authorId}` : null;
 
   const handleCommentSubmit = async () => {
     if (!postId || !onCommentSubmit) return;
@@ -134,9 +136,18 @@ export const PostCard = ({
             className="rounded-full object-cover"
           />
           <div>
-            <h4 className="font-bold text-gray-900 dark:text-white text-sm hover:underline cursor-pointer">
-              {user}
-            </h4>
+            {authorProfileHref ? (
+              <Link
+                href={authorProfileHref}
+                className="font-bold text-gray-900 dark:text-white text-sm hover:underline cursor-pointer"
+              >
+                {user}
+              </Link>
+            ) : (
+              <h4 className="font-bold text-gray-900 dark:text-white text-sm">
+                {user}
+              </h4>
+            )}
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <span>
                 {time ? dayjs(time).format("MMM DD, YYYY - h:mm A") : "Just now"}
@@ -292,11 +303,24 @@ export const PostCard = ({
             const canDeleteComment =
               Boolean(postId && commentId && currentUserId) &&
               (commentOwnerId === currentUserId || canManagePost);
+            const commenterProfileHref = commentOwnerId
+              ? `/profile/${commentOwnerId}`
+              : null;
 
             return (
               <div key={commentId || `${commenter}-${idx}`} className="flex items-start justify-between gap-3 text-sm text-gray-700 dark:text-gray-200">
                 <div>
-                  <span className="font-semibold">{commenter}: </span>
+                  {commenterProfileHref ? (
+                    <Link
+                      href={commenterProfileHref}
+                      className="font-semibold hover:underline cursor-pointer"
+                    >
+                      {commenter}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold">{commenter}</span>
+                  )}
+                  <span>: </span>
                   <span>{item.text || ""}</span>
                 </div>
                 {canDeleteComment && (
