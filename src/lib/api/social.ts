@@ -21,6 +21,7 @@ export type FollowStats = {
 export type FollowUser = {
   _id: string;
   name: string;
+  username?: string;
   image?: string;
   bio?: string;
 };
@@ -41,6 +42,28 @@ export type NotificationItem = {
     image?: string;
     text?: string;
   };
+};
+
+export type FriendRequestItem = {
+  _id: string;
+  from?: FollowUser;
+  to?: FollowUser;
+  status?: "pending" | "accepted" | "rejected" | "cancelled";
+  createdAt?: string;
+};
+
+export type SocialSearchResult = {
+  users: FollowUser[];
+  posts: {
+    _id?: string;
+    text?: string;
+    image?: string;
+    user?: {
+      _id?: string;
+      name?: string;
+      image?: string;
+    };
+  }[];
 };
 
 type CursorQuery = {
@@ -201,4 +224,170 @@ export const markNotificationRead = async (
     },
   );
   return assertSuccess(data, "Failed to mark notification as read");
+};
+
+export const getNotificationStreamUrl = () => {
+  const token = getAccessToken();
+  const tenantId = getClientTenantId();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const query = new URLSearchParams({
+    token,
+    tenantId,
+  });
+  return `${getApiUrl()}/notifications/stream?${query.toString()}`;
+};
+
+export const sendFriendRequest = async (
+  targetUserId: string,
+): Promise<ApiResponse<unknown>> => {
+  const data = await requestJson<ApiResponse<unknown>>(
+    `${getApiUrl()}/friend-requests/${targetUserId}/send`,
+    {
+      method: "POST",
+      headers: withAuthHeaders(),
+    },
+  );
+  return assertSuccess(data, "Failed to send friend request");
+};
+
+export const cancelFriendRequest = async (
+  requestId: string,
+): Promise<ApiResponse<unknown>> => {
+  const data = await requestJson<ApiResponse<unknown>>(
+    `${getApiUrl()}/friend-requests/${requestId}/cancel`,
+    {
+      method: "PATCH",
+      headers: withAuthHeaders(),
+    },
+  );
+  return assertSuccess(data, "Failed to cancel friend request");
+};
+
+export const acceptFriendRequest = async (
+  requestId: string,
+): Promise<ApiResponse<unknown>> => {
+  const data = await requestJson<ApiResponse<unknown>>(
+    `${getApiUrl()}/friend-requests/${requestId}/accept`,
+    {
+      method: "PATCH",
+      headers: withAuthHeaders(),
+    },
+  );
+  return assertSuccess(data, "Failed to accept friend request");
+};
+
+export const rejectFriendRequest = async (
+  requestId: string,
+): Promise<ApiResponse<unknown>> => {
+  const data = await requestJson<ApiResponse<unknown>>(
+    `${getApiUrl()}/friend-requests/${requestId}/reject`,
+    {
+      method: "PATCH",
+      headers: withAuthHeaders(),
+    },
+  );
+  return assertSuccess(data, "Failed to reject friend request");
+};
+
+export const getIncomingFriendRequests = async (
+  params?: CursorQuery,
+): Promise<ApiResponse<FriendRequestItem[]> & { meta?: CursorMeta }> => {
+  const suffix = buildCursorQuery(params);
+  const data = await requestJson<
+    ApiResponse<FriendRequestItem[]> & { meta?: CursorMeta }
+  >(`${getApiUrl()}/friend-requests/incoming${suffix}`, {
+    headers: withAuthHeaders(),
+    cache: "no-store",
+  });
+  return assertSuccess(data, "Failed to fetch incoming requests");
+};
+
+export const getOutgoingFriendRequests = async (
+  params?: CursorQuery,
+): Promise<ApiResponse<FriendRequestItem[]> & { meta?: CursorMeta }> => {
+  const suffix = buildCursorQuery(params);
+  const data = await requestJson<
+    ApiResponse<FriendRequestItem[]> & { meta?: CursorMeta }
+  >(`${getApiUrl()}/friend-requests/outgoing${suffix}`, {
+    headers: withAuthHeaders(),
+    cache: "no-store",
+  });
+  return assertSuccess(data, "Failed to fetch outgoing requests");
+};
+
+export const getMyFriends = async (
+  params?: CursorQuery,
+): Promise<ApiResponse<FollowUser[]> & { meta?: CursorMeta }> => {
+  const suffix = buildCursorQuery(params);
+  const data = await requestJson<ApiResponse<FollowUser[]> & { meta?: CursorMeta }>(
+    `${getApiUrl()}/friend-requests/friends/me${suffix}`,
+    {
+      headers: withAuthHeaders(),
+      cache: "no-store",
+    },
+  );
+  return assertSuccess(data, "Failed to fetch friends");
+};
+
+export const toggleBlockUser = async (
+  targetUserId: string,
+): Promise<ApiResponse<{ isBlocked: boolean }>> => {
+  const data = await requestJson<ApiResponse<{ isBlocked: boolean }>>(
+    `${getApiUrl()}/blocks/${targetUserId}/toggle`,
+    {
+      method: "PATCH",
+      headers: withAuthHeaders(),
+    },
+  );
+  return assertSuccess(data, "Failed to update block status");
+};
+
+export const getMyBlockedUsers = async (
+  params?: CursorQuery,
+): Promise<ApiResponse<FollowUser[]> & { meta?: CursorMeta }> => {
+  const suffix = buildCursorQuery(params);
+  const data = await requestJson<ApiResponse<FollowUser[]> & { meta?: CursorMeta }>(
+    `${getApiUrl()}/blocks/me${suffix}`,
+    {
+      headers: withAuthHeaders(),
+      cache: "no-store",
+    },
+  );
+  return assertSuccess(data, "Failed to fetch blocked users");
+};
+
+export const createReport = async (payload: {
+  targetType: "user" | "post" | "comment";
+  targetId: string;
+  reason: string;
+  details?: string;
+}): Promise<ApiResponse<unknown>> => {
+  const data = await requestJson<ApiResponse<unknown>>(`${getApiUrl()}/reports`, {
+    method: "POST",
+    headers: withAuthHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  return assertSuccess(data, "Failed to submit report");
+};
+
+export const searchSocial = async (
+  q: string,
+  params?: { limitUsers?: number; limitPosts?: number },
+): Promise<ApiResponse<SocialSearchResult>> => {
+  const query = new URLSearchParams();
+  query.set("q", q);
+  if (params?.limitUsers) query.set("limitUsers", String(params.limitUsers));
+  if (params?.limitPosts) query.set("limitPosts", String(params.limitPosts));
+
+  const data = await requestJson<ApiResponse<SocialSearchResult>>(
+    `${getApiUrl()}/search?${query.toString()}`,
+    {
+      headers: withAuthHeaders(),
+      cache: "no-store",
+    },
+  );
+  return assertSuccess(data, "Failed to search");
 };

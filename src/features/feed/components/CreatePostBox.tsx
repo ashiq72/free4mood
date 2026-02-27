@@ -12,12 +12,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { createPost } from "@/lib/api/post";
 import { useUser } from "@/shared/context/UserContext";
+import { QUICK_EMOJIS } from "@/features/feed/constants/emoji";
 
 export const CreatePostBox = () => {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user } = useUser();
 
@@ -50,6 +52,7 @@ export const CreatePostBox = () => {
       setDescription("");
       setFile(null);
       setPreview(null);
+      setShowEmojiPicker(false);
       setOpen(false);
 
       // reload feed
@@ -63,7 +66,13 @@ export const CreatePostBox = () => {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setShowEmojiPicker(false);
+      }}
+    >
       <PopoverTrigger asChild>
         <div
           onClick={() => {
@@ -141,7 +150,13 @@ export const CreatePostBox = () => {
                   </label>
 
                   <Video size={20} />
-                  <Smile size={20} />
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker((prev) => !prev)}
+                    className="cursor-pointer"
+                  >
+                    <Smile size={20} />
+                  </button>
                 </div>
 
                 <button
@@ -152,6 +167,23 @@ export const CreatePostBox = () => {
                   {loading ? "Posting..." : "Post"}
                 </button>
               </div>
+
+              {showEmojiPicker && (
+                <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-700 dark:bg-zinc-800">
+                  <div className="grid grid-cols-8 gap-1">
+                    {QUICK_EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setDescription((prev) => `${prev}${emoji}`)}
+                        className="rounded-md p-1 text-lg hover:bg-white dark:hover:bg-zinc-700"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.form>
           )}
         </AnimatePresence>
