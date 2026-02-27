@@ -35,12 +35,9 @@ export const CreatePostBox = () => {
     setLoading(true);
 
     try {
-      const title = `${user?.name}`;
-
       // ⭐ MUST USE FormData for image upload
       const formData = new FormData();
-      formData.append("title", title);
-      formData.append("description", description);
+      formData.append("text", description);
 
       if (file) {
         formData.append("file", file); // MUST MATCH multer.single("file")

@@ -1,29 +1,30 @@
-"use server";
+"use client";
 
-import { cookies, headers } from "next/headers";
 import { assertSuccess, requestJson } from "./client";
 import { getApiUrl, getTenantIdFallback } from "./config";
 import type { ApiResponse } from "./types";
 import type { Post } from "@/features/feed/types";
 
-const getTenantId = async () => {
-  const headersList = await headers();
-  const host = headersList.get("host") ?? "";
-  const parts = host.split(".");
-  if (parts.length > 1 && parts[0]) return parts[0];
+const getClientTenantId = () => {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const parts = host.split(".");
+    if (parts.length > 1 && parts[0]) return parts[0];
+  }
   return getTenantIdFallback();
 };
 
-const getAccessToken = async () => {
-  const cookieStore = await cookies();
-  return cookieStore.get("accessToken")?.value ?? null;
+const getAccessToken = () => {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
 };
 
 export const createPost = async (
   formData: FormData
 ): Promise<ApiResponse<Post>> => {
-  const token = await getAccessToken();
-  const tenantId = await getTenantId();
+  const token = getAccessToken();
+  const tenantId = getClientTenantId();
 
   if (!token) {
     throw new Error("Access token not found");
@@ -43,7 +44,7 @@ export const createPost = async (
 };
 
 export const getAllPosts = async (): Promise<ApiResponse<Post[]>> => {
-  const tenantId = await getTenantId();
+  const tenantId = getClientTenantId();
 
   const data = await requestJson<ApiResponse<Post[]>>(`${getApiUrl()}/posts/`, {
     cache: "no-store",
