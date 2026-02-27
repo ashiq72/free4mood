@@ -8,29 +8,63 @@ import {
 import { ActionButton } from "./ActionButton";
 import dayjs from "dayjs";
 import Image from "next/image";
+import { useMemo, useState } from "react";
 
 type PostCardProps = {
+  postId?: string;
   user: string;
   time?: string;
   content: string;
   image?: string;
-  likes?: number | unknown[];
-  comments?: number | unknown[];
+  likes?: number | string[];
+  comments?:
+    | number
+    | {
+        user?: { _id?: string; name?: string } | string;
+        text?: string;
+        createdAt?: string;
+      }[];
+  onLike?: (postId: string) => Promise<void> | void;
+  onCommentSubmit?: (postId: string, text: string) => Promise<void> | void;
+  likeLoading?: boolean;
+  commentLoading?: boolean;
+  liked?: boolean;
 };
 
 const toCount = (value?: number | unknown[]) =>
   Array.isArray(value) ? value.length : value ?? 0;
 
 export const PostCard = ({
+  postId,
   user,
   time,
   content,
   image,
   likes,
   comments,
+  onLike,
+  onCommentSubmit,
+  likeLoading = false,
+  commentLoading = false,
+  liked = false,
 }: PostCardProps) => {
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [commentText, setCommentText] = useState("");
   const likesCount = toCount(likes);
   const commentsCount = toCount(comments);
+  const commentList = useMemo(
+    () => (Array.isArray(comments) ? comments.slice(-2) : []),
+    [comments],
+  );
+
+  const handleCommentSubmit = async () => {
+    if (!postId || !onCommentSubmit) return;
+    const text = commentText.trim();
+    if (!text) return;
+    await onCommentSubmit(postId, text);
+    setCommentText("");
+  };
+
   return (
     <div className='bg-white dark:bg-zinc-900 rounded-xl shadow-sm overflow-hidden'>
       <div className='p-4 flex justify-between items-start'>
@@ -96,9 +130,65 @@ export const PostCard = ({
         </div>
       </div>
 
+      {commentList.length > 0 && (
+        <div className='px-4 py-2 space-y-2 border-b border-gray-100 dark:border-zinc-800'>
+          {commentList.map((item, idx) => {
+            const commenter =
+              typeof item.user === "object" && item.user
+                ? item.user.name || "User"
+                : typeof item.user === "string"
+                  ? item.user
+                  : "User";
+            return (
+              <div key={`${commenter}-${idx}`} className='text-sm text-gray-700 dark:text-gray-200'>
+                <span className='font-semibold'>{commenter}: </span>
+                <span>{item.text || ""}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showCommentBox && (
+        <div className='px-3 py-2 border-b border-gray-100 dark:border-zinc-800'>
+          <div className='flex items-center gap-2'>
+            <input
+              type='text'
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder='Write a comment...'
+              className='h-9 w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 text-sm outline-none'
+            />
+            <button
+              type='button'
+              disabled={commentLoading || !commentText.trim()}
+              onClick={handleCommentSubmit}
+              className='h-9 rounded-md bg-blue-600 px-3 text-xs font-semibold text-white disabled:opacity-60 cursor-pointer'
+            >
+              {commentLoading ? "..." : "Post"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className='px-2 py-1 flex items-center justify-between cursor-pointer'>
-        <ActionButton icon={Heart} label='Like' className='cursor-pointer' />
-        <ActionButton className='cursor-pointer' icon={MessageCircle} label='Comment' />
+        <ActionButton
+          icon={Heart}
+          label='Like'
+          className='cursor-pointer'
+          onClick={() => {
+            if (!postId || !onLike) return;
+            void onLike(postId);
+          }}
+          disabled={likeLoading}
+          active={liked}
+        />
+        <ActionButton
+          className='cursor-pointer'
+          icon={MessageCircle}
+          label='Comment'
+          onClick={() => setShowCommentBox((prev) => !prev)}
+        />
         <ActionButton className='cursor-pointer' icon={Share2} label='Share' />
       </div>
     </div>
