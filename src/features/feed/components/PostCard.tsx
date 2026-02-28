@@ -42,6 +42,8 @@ type PostCardProps = {
   commentLoading?: boolean;
   actionLoading?: boolean;
   liked?: boolean;
+  defaultShowCommentBox?: boolean;
+  commentsAnchorId?: string;
 };
 
 const toCount = (value?: number | unknown[]) =>
@@ -87,8 +89,10 @@ export const PostCard = ({
   commentLoading = false,
   actionLoading = false,
   liked = false,
+  defaultShowCommentBox = false,
+  commentsAnchorId,
 }: PostCardProps) => {
-  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [showCommentBox, setShowCommentBox] = useState(defaultShowCommentBox);
   const [commentText, setCommentText] = useState("");
   const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -287,6 +291,8 @@ export const PostCard = ({
           <span className="hover:underline cursor-pointer">{commentsCount} Comments</span>
         </div>
       </div>
+
+      {commentsAnchorId ? <div id={commentsAnchorId} /> : null}
 
       {commentList.length > 0 && (
         <div className="px-4 py-2 space-y-2 border-b border-gray-100 dark:border-zinc-800">

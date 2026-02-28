@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AtSign,
   Bell,
@@ -38,6 +39,7 @@ const getRelativeTime = (value?: string) => {
 };
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { user } = useUser();
   const [filter, setFilter] = useState<FilterType>("all");
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -118,17 +120,23 @@ export default function NotificationsPage() {
   };
 
   const handleItemClick = async (item: NotificationItem) => {
-    if (item.isRead) return;
-    try {
-      await markNotificationRead(item._id);
-      setItems((prev) =>
-        prev.map((entry) =>
-          entry._id === item._id ? { ...entry, isRead: true } : entry,
-        ),
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch {
-      // keep silent to avoid noisy UX
+    if (!item.isRead) {
+      try {
+        await markNotificationRead(item._id);
+        setItems((prev) =>
+          prev.map((entry) =>
+            entry._id === item._id ? { ...entry, isRead: true } : entry,
+          ),
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch {
+        // keep silent to avoid noisy UX
+      }
+    }
+
+    const postId = item.post?._id?.trim();
+    if (postId) {
+      router.push(`/post/${encodeURIComponent(postId)}#comments`);
     }
   };
 
@@ -326,7 +334,11 @@ const NotificationRow = ({
           {!notification.isRead && (
             <div className="w-3 h-3 bg-blue-600 rounded-full" />
           )}
-          <button className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full transition-all">
+          <button
+            type="button"
+            onClick={(event) => event.stopPropagation()}
+            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full transition-all"
+          >
             <MoreHorizontal className="w-5 h-5 text-gray-500" />
           </button>
         </div>
