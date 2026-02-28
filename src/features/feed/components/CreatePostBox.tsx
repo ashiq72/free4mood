@@ -84,6 +84,17 @@ export const CreatePostBox = () => {
     if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
+  const resetDraft = () => {
+    setDescription("");
+    clearSelectedMedia();
+    setShowEmojiPicker(false);
+  };
+
+  const handleCancel = () => {
+    resetDraft();
+    setOpen(false);
+  };
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = description.trim();
@@ -105,9 +116,7 @@ export const CreatePostBox = () => {
       await createPost(formData);
       toast.success("Post created successfully");
 
-      setDescription("");
-      clearSelectedMedia();
-      setShowEmojiPicker(false);
+      resetDraft();
       setOpen(false);
 
       window.dispatchEvent(new CustomEvent("post:created"));
@@ -162,7 +171,7 @@ export const CreatePostBox = () => {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleCreatePost} className="p-4 sm:p-5 space-y-4">
+        <form onSubmit={handleCreatePost} className="p-4 sm:p-5 space-y-5">
           <div className="flex items-center gap-3">
             <img
               src={profileImage}
@@ -188,7 +197,7 @@ export const CreatePostBox = () => {
           />
 
           {preview && (
-            <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700">
+            <div className="relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-black/80 dark:border-zinc-700">
               <button
                 type="button"
                 onClick={clearSelectedMedia}
@@ -196,25 +205,37 @@ export const CreatePostBox = () => {
               >
                 <X className="h-4 w-4" />
               </button>
-              {file?.type.startsWith("video/") ? (
-                <video
-                  src={preview}
-                  controls
-                  className="max-h-[360px] w-full bg-black"
-                />
-              ) : (
-                <Image
-                  src={preview}
-                  width={900}
-                  height={540}
-                  alt="Preview"
-                  className="max-h-[360px] w-full object-cover"
-                />
-              )}
+              <div className="relative aspect-[16/9] w-full">
+                {file?.type.startsWith("video/") ? (
+                  <video
+                    src={preview}
+                    controls
+                    className="h-full w-full bg-black object-contain"
+                  />
+                ) : (
+                  <Image
+                    src={preview}
+                    width={1280}
+                    height={720}
+                    alt="Preview"
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </div>
             </div>
           )}
 
           <div className="rounded-xl border border-gray-200 p-3 dark:border-zinc-700">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                Add to your post
+              </p>
+              {file && (
+                <span className="truncate text-xs text-gray-500">
+                  {file.name}
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <label className="inline-flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 cursor-pointer dark:bg-green-900/20 dark:text-green-300">
                 <ImageIcon className="h-4 w-4" />
@@ -269,13 +290,23 @@ export const CreatePostBox = () => {
             <span className="text-xs text-gray-500">
               {description.trim().length}/2000
             </span>
-            <button
-              type="submit"
-              disabled={loading || !description.trim()}
-              className="min-w-[110px] rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? "Posting..." : "Post"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={loading}
+                className="min-w-[90px] rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-200 dark:hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading || !description.trim()}
+                className="min-w-[110px] rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? "Posting..." : "Post"}
+              </button>
+            </div>
           </div>
         </form>
       </DialogContent>

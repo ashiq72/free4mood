@@ -353,6 +353,21 @@ export const getMyFriends = async (
   return assertSuccess(data, "Failed to fetch friends");
 };
 
+export const getUserFriends = async (
+  userId: string,
+  params?: CursorQuery,
+): Promise<ApiResponse<FollowUser[]> & { meta?: CursorMeta }> => {
+  const suffix = buildCursorQuery(params);
+  const data = await requestJson<ApiResponse<FollowUser[]> & { meta?: CursorMeta }>(
+    `${getApiUrl()}/friend-requests/friends/${encodeURIComponent(userId)}${suffix}`,
+    {
+      headers: withAuthHeaders(),
+      cache: "no-store",
+    },
+  );
+  return assertSuccess(data, "Failed to fetch user friends");
+};
+
 export const toggleBlockUser = async (
   targetUserId: string,
 ): Promise<ApiResponse<{ isBlocked: boolean }>> => {

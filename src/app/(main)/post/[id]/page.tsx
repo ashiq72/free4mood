@@ -13,6 +13,7 @@ import {
   deletePostComment,
   getPostById,
   togglePostLike,
+  updatePostComment,
   updatePost,
 } from "@/lib/api/post";
 import { createReport, toggleBlockUser } from "@/lib/api/social";
@@ -147,6 +148,25 @@ export default function PostDetailPage() {
     }
   };
 
+  const handleUpdateComment = async (
+    targetPostId: string,
+    commentId: string,
+    text: string,
+  ) => {
+    setActionLoadingId(`comment-edit-${commentId}`);
+    try {
+      const res = await updatePostComment(targetPostId, commentId, text);
+      replacePost(res.data);
+      toast.success("Comment updated");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update comment";
+      toast.error(message);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleUpdatePost = async (targetPostId: string, text: string) => {
     setActionLoadingId(`post-${targetPostId}`);
     try {
@@ -252,6 +272,10 @@ export default function PostDetailPage() {
       : typeof post.user === "string"
         ? post.user
         : "Unknown";
+  const userImage =
+    typeof post.user === "object" && post.user
+      ? post.user.profileImage || (post.user as { image?: string }).image
+      : undefined;
   const likedByMe =
     Array.isArray(post.likes) && !!user?.userId
       ? post.likes.some((id) => String(id) === String(user.userId))
@@ -272,6 +296,7 @@ export default function PostDetailPage() {
       <PostCard
         postId={post._id}
         authorId={authorId}
+        userImage={userImage}
         currentUserId={user.userId}
         user={userName}
         time={post.createdAt}
@@ -282,6 +307,7 @@ export default function PostDetailPage() {
         onLike={handleLike}
         onCommentSubmit={handleCommentSubmit}
         onDeleteComment={handleDeleteComment}
+        onUpdateComment={handleUpdateComment}
         onUpdatePost={handleUpdatePost}
         onDeletePost={handleDeletePost}
         onReportPost={handleReportPost}
