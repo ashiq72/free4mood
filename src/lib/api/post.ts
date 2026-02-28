@@ -121,6 +121,27 @@ export const getUserPosts = async (
   return assertSuccess(data, "Failed to fetch user posts");
 };
 
+export const getPostById = async (postId: string): Promise<ApiResponse<Post>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const data = await requestJson<ApiResponse<Post>>(
+    `${getApiUrl()}/posts/${encodeURIComponent(postId)}`,
+    {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+      },
+    },
+  );
+
+  return assertSuccess(data, "Failed to fetch post");
+};
+
 export const togglePostLike = async (
   postId: string,
 ): Promise<ApiResponse<Post>> => {
