@@ -9,8 +9,16 @@ import {
 import dayjs from "dayjs";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { QUICK_EMOJIS } from "@/features/feed/constants/emoji";
+import { getPostLikes, type PostLikeUser } from "@/lib/api/post";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import { ActionButton } from "./ActionButton";
 
 type CommentItem = {
@@ -19,11 +27,13 @@ type CommentItem = {
   user?: { _id?: string; name?: string } | string;
   text?: string;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 type PostCardProps = {
   postId?: string;
   authorId?: string;
+  userImage?: string;
   currentUserId?: string;
   user: string;
   time?: string;
@@ -34,6 +44,11 @@ type PostCardProps = {
   onLike?: (postId: string) => Promise<void> | void;
   onCommentSubmit?: (postId: string, text: string) => Promise<void> | void;
   onDeleteComment?: (postId: string, commentId: string) => Promise<void> | void;
+  onUpdateComment?: (
+    postId: string,
+    commentId: string,
+    text: string,
+  ) => Promise<void> | void;
   onUpdatePost?: (postId: string, text: string) => Promise<void> | void;
   onDeletePost?: (postId: string) => Promise<void> | void;
   onReportPost?: (postId: string) => Promise<void> | void;
@@ -71,6 +86,7 @@ const normalizeCommentId = (value: unknown): string | undefined => {
 export const PostCard = ({
   postId,
   authorId,
+  userImage,
   currentUserId,
   user,
   time,
@@ -81,6 +97,7 @@ export const PostCard = ({
   onLike,
   onCommentSubmit,
   onDeleteComment,
+  onUpdateComment,
   onUpdatePost,
   onDeletePost,
   onReportPost,
@@ -98,6 +115,36 @@ export const PostCard = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState(content);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  const [openCommentMenuId, setOpenCommentMenuId] = useState<string | null>(null);
+  const [authorImageFailed, setAuthorImageFailed] = useState(false);
+  const [likesOpen, setLikesOpen] = useState(false);
+  const [likesLoading, setLikesLoading] = useState(false);
+  const [likedUsers, setLikedUsers] = useState<PostLikeUser[]>([]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      if (menuOpen && !target.closest("[data-post-menu='true']")) {
+        setMenuOpen(false);
+      }
+
+      if (
+        openCommentMenuId &&
+        !target.closest(`[data-comment-menu-id='${openCommentMenuId}']`)
+      ) {
+        setOpenCommentMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [menuOpen, openCommentMenuId]);
 
   const likesCount = toCount(likes);
   const commentsCount = toCount(comments);
@@ -110,6 +157,14 @@ export const PostCard = ({
     postId && currentUserId && authorId && currentUserId === authorId,
   );
   const authorProfileHref = authorId ? `/profile/${authorId}` : null;
+  const normalizedUserImage =
+    typeof userImage === "string" ? userImage.trim() : "";
+  const showAuthorImage = Boolean(normalizedUserImage && !authorImageFailed);
+  const authorInitial = (user || "U").trim().charAt(0).toUpperCase();
+
+  useEffect(() => {
+    setAuthorImageFailed(false);
+  }, [normalizedUserImage]);
 
   const handleCommentSubmit = async () => {
     if (!postId || !onCommentSubmit) return;
@@ -128,17 +183,39 @@ export const PostCard = ({
     setEditing(false);
   };
 
+  const handleOpenLikes = async () => {
+    if (!postId) return;
+    setLikesOpen(true);
+    setLikesLoading(true);
+    try {
+      const res = await getPostLikes(postId);
+      setLikedUsers(Array.isArray(res.data) ? res.data : []);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load likes";
+      toast.error(message);
+      setLikedUsers([]);
+    } finally {
+      setLikesLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm overflow-hidden">
       <div className="p-4 flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <Image
-            width={35}
-            height={35}
-            src="https://picsum.photos/200?random=41"
-            alt="User"
-            className="rounded-full object-cover"
-          />
+          {showAuthorImage ? (
+            <img
+              src={normalizedUserImage}
+              alt={user}
+              className="h-[35px] w-[35px] rounded-full object-cover"
+              onError={() => setAuthorImageFailed(true)}
+            />
+          ) : (
+            <div className="flex h-[35px] w-[35px] items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700 dark:bg-zinc-700 dark:text-zinc-100">
+              {authorInitial}
+            </div>
+          )}
           <div>
             {authorProfileHref ? (
               <Link
@@ -162,7 +239,7 @@ export const PostCard = ({
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative" data-post-menu="true">
           <button
             type="button"
             onClick={() => setMenuOpen((prev) => !prev)}
@@ -268,15 +345,19 @@ export const PostCard = ({
       </div>
 
       {image && (
-        <div className="bg-gray-100 dark:bg-black">
-          <Image
-            src={image}
-            alt="Content"
-            width={800}
-            height={500}
-            className="w-full h-auto max-h-[300px] md:max-h-[400px] object-cover"
-            unoptimized
-          />
+        <div className="px-4 pb-3">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-black/80 dark:border-zinc-800">
+            <div className="relative aspect-[16/10] w-full">
+              <Image
+                src={image}
+                alt="Content"
+                width={1280}
+                height={800}
+                className="h-full w-full object-cover"
+                unoptimized
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -285,7 +366,13 @@ export const PostCard = ({
           <div className="bg-blue-500 p-1 rounded-full">
             <Heart className="w-2.5 h-2.5 text-white fill-current" />
           </div>
-          <span className="hover:underline cursor-pointer">{likesCount} Likes</span>
+          <button
+            type="button"
+            onClick={() => void handleOpenLikes()}
+            className="hover:underline cursor-pointer"
+          >
+            {likesCount} Likes
+          </button>
         </div>
         <div className="flex gap-3">
           <span className="hover:underline cursor-pointer">{commentsCount} Comments</span>
@@ -305,17 +392,38 @@ export const PostCard = ({
                   ? item.user
                   : "User";
             const commentOwnerId =
-              typeof item.user === "object" && item.user ? item.user._id : undefined;
+              typeof item.user === "object" && item.user
+                ? normalizeCommentId(item.user._id)
+                : undefined;
+            const isCommentOwner =
+              Boolean(currentUserId) && commentOwnerId === currentUserId;
             const canDeleteComment =
               Boolean(postId && commentId && currentUserId) &&
-              (commentOwnerId === currentUserId || canManagePost);
+              (isCommentOwner || canManagePost);
+            const canEditComment =
+              Boolean(postId && commentId && currentUserId) &&
+              isCommentOwner;
+            const canManageCommentActions = canEditComment || canDeleteComment;
+            const isEditingComment =
+              Boolean(commentId) && editingCommentId === commentId;
+            const isCommentMenuOpen =
+              Boolean(commentId) && openCommentMenuId === commentId;
+            const commentCreatedAt = item.createdAt
+              ? dayjs(item.createdAt).format("MMM DD, YYYY - h:mm A")
+              : "";
+            const commentUpdatedAt = item.updatedAt
+              ? dayjs(item.updatedAt).format("MMM DD, YYYY - h:mm A")
+              : "";
             const commenterProfileHref = commentOwnerId
               ? `/profile/${commentOwnerId}`
               : null;
 
             return (
-              <div key={commentId || `${commenter}-${idx}`} className="flex items-start justify-between gap-3 text-sm text-gray-700 dark:text-gray-200">
-                <div>
+              <div
+                key={commentId || `${commenter}-${idx}`}
+                className="group flex items-start justify-between gap-3 text-sm text-gray-700 dark:text-gray-200"
+              >
+                <div className="flex-1 min-w-0">
                   {commenterProfileHref ? (
                     <Link
                       href={commenterProfileHref}
@@ -327,20 +435,116 @@ export const PostCard = ({
                     <span className="font-semibold">{commenter}</span>
                   )}
                   <span>: </span>
-                  <span>{item.text || ""}</span>
+                  {isEditingComment ? (
+                    <div className="mt-1 space-y-2">
+                      <input
+                        type="text"
+                        value={editingCommentText}
+                        onChange={(e) => setEditingCommentText(e.target.value)}
+                        className="h-8 w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-sm outline-none"
+                        autoFocus
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={!editingCommentText.trim()}
+                          className="text-xs text-blue-600 disabled:opacity-60 cursor-pointer"
+                          onClick={() => {
+                            if (
+                              !postId ||
+                              !commentId ||
+                              !onUpdateComment ||
+                              !editingCommentText.trim()
+                            ) {
+                              return;
+                            }
+                            void onUpdateComment(
+                              postId,
+                              commentId,
+                              editingCommentText.trim(),
+                            );
+                            setEditingCommentId(null);
+                            setEditingCommentText("");
+                            setOpenCommentMenuId(null);
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="text-xs text-gray-500 cursor-pointer"
+                          onClick={() => {
+                            setEditingCommentId(null);
+                            setEditingCommentText("");
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <span>{item.text || ""}</span>
+                  )}
+                  {(commentCreatedAt || commentUpdatedAt) && (
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                      {commentCreatedAt}
+                      {commentUpdatedAt && commentUpdatedAt !== commentCreatedAt
+                        ? ` - Edited ${commentUpdatedAt}`
+                        : ""}
+                    </p>
+                  )}
                 </div>
-                {canDeleteComment && (
-                  <button
-                    type="button"
-                    className="text-xs text-red-600"
-                    onClick={() => {
-                      if (!postId || !commentId || !onDeleteComment) return;
-                      void onDeleteComment(postId, commentId);
-                    }}
-                  >
-                    Delete
-                  </button>
-                )}
+                <div
+                  className="relative shrink-0"
+                  data-comment-menu-id={commentId || undefined}
+                >
+                  {canManageCommentActions && !isEditingComment && (
+                    <button
+                      type="button"
+                      className="rounded-full p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer opacity-100"
+                      onClick={() => {
+                        if (!commentId) return;
+                        setOpenCommentMenuId((prev) =>
+                          prev === commentId ? null : commentId,
+                        );
+                      }}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  )}
+
+                  {isCommentMenuOpen && canManageCommentActions && (
+                    <div className="absolute right-0 top-7 z-20 min-w-[110px] rounded-md border border-gray-200 bg-white p-1 shadow-md dark:border-zinc-700 dark:bg-zinc-900">
+                      {canEditComment && (
+                        <button
+                          type="button"
+                          className="w-full rounded px-2 py-1 text-left text-xs text-blue-600 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer"
+                          onClick={() => {
+                            if (!commentId) return;
+                            setEditingCommentId(commentId);
+                            setEditingCommentText(item.text || "");
+                            setOpenCommentMenuId(null);
+                          }}
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canDeleteComment && (
+                        <button
+                          type="button"
+                          className="w-full rounded px-2 py-1 text-left text-xs text-red-600 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer"
+                          onClick={() => {
+                            if (!postId || !commentId || !onDeleteComment) return;
+                            void onDeleteComment(postId, commentId);
+                            setOpenCommentMenuId(null);
+                          }}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -420,6 +624,74 @@ export const PostCard = ({
         />
         <ActionButton className="cursor-pointer" icon={Share2} label="Share" />
       </div>
+
+      <Dialog open={likesOpen} onOpenChange={setLikesOpen}>
+        <DialogContent className="max-w-sm rounded-2xl border border-gray-200 bg-white p-0 dark:border-zinc-800 dark:bg-zinc-900">
+          <DialogHeader className="border-b border-gray-200 px-4 py-3 dark:border-zinc-800">
+            <DialogTitle className="text-base font-semibold text-gray-900 dark:text-white">
+              People who liked this
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="max-h-[360px] overflow-auto px-2 py-2">
+            {likesLoading ? (
+              <div className="px-2 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                Loading likes...
+              </div>
+            ) : likedUsers.length === 0 ? (
+              <div className="px-2 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                No likes yet.
+              </div>
+            ) : (
+              likedUsers.map((likedUser, index) => {
+                const likedUserId = likedUser._id;
+                const likedUserImage =
+                  likedUser.image || likedUser.profileImage || "";
+                const likedUserInitial = (likedUser.name || "U")
+                  .trim()
+                  .charAt(0)
+                  .toUpperCase();
+                return (
+                  <Link
+                    key={likedUserId || `${likedUser.name || "user"}-${index}`}
+                    href={likedUserId ? `/profile/${likedUserId}` : "#"}
+                    className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                    onClick={(event) => {
+                      if (!likedUserId) {
+                        event.preventDefault();
+                      } else {
+                        setLikesOpen(false);
+                      }
+                    }}
+                  >
+                    {likedUserImage ? (
+                      <img
+                        src={likedUserImage}
+                        alt={likedUser.name || "User"}
+                        className="h-9 w-9 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700 dark:bg-zinc-700 dark:text-zinc-100">
+                        {likedUserInitial}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                        {likedUser.name || "Unknown user"}
+                      </p>
+                      {likedUser.bio ? (
+                        <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                          {likedUser.bio}
+                        </p>
+                      ) : null}
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

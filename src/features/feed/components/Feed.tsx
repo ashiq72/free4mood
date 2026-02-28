@@ -9,6 +9,7 @@ import {
   getMyPosts,
   getUserPosts,
   togglePostLike,
+  updatePostComment,
   updatePost,
 } from "@/lib/api/post";
 import { PostCard } from "./PostCard";
@@ -243,6 +244,25 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
     }
   };
 
+  const handleUpdateComment = async (
+    postId: string,
+    commentId: string,
+    text: string,
+  ) => {
+    setActionLoadingId(`comment-edit-${commentId}`);
+    try {
+      const res = await updatePostComment(postId, commentId, text);
+      replacePost(res.data);
+      toast.success("Comment updated");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update comment";
+      toast.error(message);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleUpdatePost = async (postId: string, text: string) => {
     setActionLoadingId(`post-${postId}`);
     try {
@@ -343,6 +363,10 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
             : typeof post.user === "string"
               ? post.user
               : "Unknown";
+        const userImage =
+          typeof post.user === "object" && post.user
+            ? post.user.profileImage || (post.user as { image?: string }).image
+            : undefined;
         const likedByMe =
           Array.isArray(post.likes) && !!user?.userId
             ? post.likes.some((id) => String(id) === String(user.userId))
@@ -352,6 +376,7 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
           key={post._id ?? `${post.text}-${index}`}
           postId={post._id}
           authorId={authorId}
+          userImage={userImage}
           currentUserId={user?.userId}
           user={userName}
           time={post.createdAt}
@@ -362,6 +387,7 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
           onLike={handleLike}
           onCommentSubmit={handleCommentSubmit}
           onDeleteComment={handleDeleteComment}
+          onUpdateComment={handleUpdateComment}
           onUpdatePost={handleUpdatePost}
           onDeletePost={handleDeletePost}
           onReportPost={handleReportPost}

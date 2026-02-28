@@ -8,8 +8,8 @@ import { splitMediaUrls } from "@/features/profile/media";
 import type { IUserInfo, ProfileTabKey } from "@/features/profile/types";
 import { getUserPosts } from "@/lib/api/post";
 import {
-  getFollowerUsers,
   getSocialProfile,
+  getUserFriends,
   type FollowUser,
 } from "@/lib/api/social";
 import { useUser } from "@/shared/context/UserContext";
@@ -45,7 +45,7 @@ export default function PublicProfilePage() {
       setLoading(true);
       const [profileRes, followerRes, postRes] = await Promise.all([
         getSocialProfile(profileUserId),
-        getFollowerUsers(profileUserId, { limit: 80 }),
+        getUserFriends(profileUserId, { limit: 80 }),
         getUserPosts(profileUserId, { limit: 80 }),
       ]);
 
@@ -110,7 +110,7 @@ export default function PublicProfilePage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         tabCounts={{
-          friends: friendsPreview.length,
+          friends: friendCount,
           photos: photoPreview.length,
           videos: videoPreview.length,
         }}

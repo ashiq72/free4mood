@@ -19,6 +19,14 @@ type FeedQuery = {
   cursor?: string;
 };
 
+export type PostLikeUser = {
+  _id?: string;
+  name?: string;
+  image?: string;
+  profileImage?: string;
+  bio?: string;
+};
+
 const buildFeedQuery = (params?: FeedQuery) => {
   const query = new URLSearchParams();
   if (params?.limit) query.set("limit", String(params.limit));
@@ -140,6 +148,29 @@ export const getPostById = async (postId: string): Promise<ApiResponse<Post>> =>
   );
 
   return assertSuccess(data, "Failed to fetch post");
+};
+
+export const getPostLikes = async (
+  postId: string,
+): Promise<ApiResponse<PostLikeUser[]>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const data = await requestJson<ApiResponse<PostLikeUser[]>>(
+    `${getApiUrl()}/posts/${encodeURIComponent(postId)}/likes`,
+    {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+      },
+    },
+  );
+
+  return assertSuccess(data, "Failed to fetch post likes");
 };
 
 export const togglePostLike = async (
@@ -274,4 +305,33 @@ export const deletePostComment = async (
   );
 
   return assertSuccess(data, "Failed to delete comment");
+};
+
+export const updatePostComment = async (
+  postId: string,
+  commentId: string,
+  text: string,
+): Promise<ApiResponse<Post>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+  const safePostId = encodeURIComponent(postId.trim());
+  const safeCommentId = encodeURIComponent(commentId.trim());
+
+  const data = await requestJson<ApiResponse<Post>>(
+    `${getApiUrl()}/posts/${safePostId}/comments/${safeCommentId}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text }),
+    },
+  );
+
+  return assertSuccess(data, "Failed to update comment");
 };
