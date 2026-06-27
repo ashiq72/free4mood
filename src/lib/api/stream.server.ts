@@ -12,13 +12,15 @@ export const proxyAuthenticatedStream = async (
 
   const host = (await headers()).get("host") || "";
   const tenantId = getTenantIdFromHost(host);
-  const query = new URLSearchParams({ token, tenantId });
 
   try {
     const backendResponse = await fetch(
-      `${getApiUrl()}${backendPath}?${query.toString()}`,
+      `${getApiUrl()}${backendPath}`,
       {
-        headers: { "x-tenant-id": tenantId },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-tenant-id": tenantId,
+        },
         cache: "no-store",
         signal: request.signal,
       },

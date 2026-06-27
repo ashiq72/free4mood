@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { ArrowRight, Lock, Phone } from "lucide-react";
+import { ArrowRight, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { loginUser } from "@/lib/api/auth.client";
 import type { LoginPayload } from "@/lib/api/auth.client";
@@ -22,16 +22,10 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginPayload>();
 
-  const onSubmit: SubmitHandler<LoginPayload> = async ({ phone, password }) => {
+  const onSubmit: SubmitHandler<LoginPayload> = async ({ email, password }) => {
     setLoading(true);
     try {
-      const cleanedPhone = phone.trim();
-      if (!/^01[0-9]{9}$/.test(cleanedPhone)) {
-        toast.error("Enter a valid phone number");
-        return;
-      }
-
-      await loginUser({ phone: cleanedPhone, password });
+      await loginUser({ email: email.trim().toLowerCase(), password });
       toast.success("Login successful");
       router.push("/");
     } catch (error: unknown) {
@@ -87,23 +81,25 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Phone</label>
+              <label className="text-sm font-medium text-slate-700">Email</label>
               <div className="relative">
-                <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
-                  {...register("phone", {
-                    required: "Phone is required",
+                  type="email"
+                  autoComplete="email"
+                  {...register("email", {
+                    required: "Email is required",
                     pattern: {
-                      value: /^01[0-9]{9}$/,
-                      message: "Enter 11-digit BD phone number",
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                      message: "Enter a valid email address",
                     },
                   })}
-                  placeholder="01XXXXXXXXX"
+                  placeholder="you@example.com"
                   className={inputClassName}
                 />
               </div>
-              {errors.phone && (
-                <p className="text-xs text-red-500">{errors.phone.message}</p>
+              {errors.email && (
+                <p className="text-xs text-red-500">{errors.email.message}</p>
               )}
             </div>
 
@@ -113,6 +109,7 @@ export default function LoginPage() {
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="password"
+                  autoComplete="current-password"
                   {...register("password", {
                     required: "Password is required",
                     minLength: { value: 6, message: "At least 6 characters" },

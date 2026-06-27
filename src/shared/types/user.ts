@@ -4,7 +4,7 @@ export interface IUser {
   isActive?: boolean;
   name: string;
   gender: string;
-  phone: string;
+  phone?: string;
   email?: string;
   tenantId?: string;
   role?: "user" | "admin" | "super_admin";

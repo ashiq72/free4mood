@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { ArrowRight, Lock, Phone, UserRound } from "lucide-react";
+import { ArrowRight, Lock, Mail, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { createUser } from "@/lib/api/user";
 import { GenderEnum, IFormInput } from "@/features/auth/types";
@@ -118,23 +118,25 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Phone</label>
+              <label className="text-sm font-medium text-slate-700">Email</label>
               <div className="relative">
-                <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
-                  {...register("phone", {
-                    required: "Phone number is required",
+                  type="email"
+                  autoComplete="email"
+                  {...register("email", {
+                    required: "Email is required",
                     pattern: {
-                      value: /^[0-9]{11}$/,
-                      message: "Phone must be 11 digits",
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                      message: "Enter a valid email address",
                     },
                   })}
-                  placeholder="01XXXXXXXXX"
+                  placeholder="you@example.com"
                   className={inputClassName}
                 />
               </div>
-              {errors.phone && (
-                <p className="text-xs text-red-500">{errors.phone.message}</p>
+              {errors.email && (
+                <p className="text-xs text-red-500">{errors.email.message}</p>
               )}
             </div>
 
@@ -144,6 +146,7 @@ export default function RegisterPage() {
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="password"
+                  autoComplete="new-password"
                   {...register("password", {
                     required: "Password is required",
                     minLength: { value: 6, message: "At least 6 characters" },

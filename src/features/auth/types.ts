@@ -7,6 +7,6 @@ export enum GenderEnum {
 export interface IFormInput {
   name: string;
   gender: GenderEnum;
-  phone: string;
+  email: string;
   password: string;
 }
