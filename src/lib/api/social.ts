@@ -248,17 +248,10 @@ export const markNotificationRead = async (
 };
 
 export const getNotificationStreamUrl = () => {
-  const token = getAccessToken();
-  const tenantId = getClientTenantId();
-  if (!token) {
+  if (!getAccessToken()) {
     throw new Error("Access token not found");
   }
-
-  const query = new URLSearchParams({
-    token,
-    tenantId,
-  });
-  return `${getApiUrl()}/notifications/stream?${query.toString()}`;
+  return "/api/notifications/stream";
 };
 
 export const sendFriendRequest = async (

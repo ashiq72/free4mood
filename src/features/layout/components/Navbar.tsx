@@ -25,6 +25,7 @@ import { getMessageStreamUrl, getUnreadMessageCount } from "@/lib/api/message";
 import { getMe } from "@/lib/api/user";
 import type { IUserInfo } from "@/features/profile/types";
 import { useUser } from "@/shared/context/UserContext";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 
 const NavItem = ({
   icon: Icon,
@@ -436,7 +437,7 @@ export default function Navbar() {
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                   >
-                    <img
+                    <RemoteImage
                       alt=""
                       src={profileImage}
                       className="h-9 w-9 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-black"
@@ -450,7 +451,7 @@ export default function Navbar() {
                   {isUserMenuOpen && (
                     <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 p-2">
                       <div className="p-3 mb-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl flex items-center gap-3">
-                        <img
+                        <RemoteImage
                           alt=""
                           src={profileImage}
                           className="h-10 w-10 rounded-full object-cover shrink-0"

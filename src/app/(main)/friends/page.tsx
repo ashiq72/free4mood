@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type ElementType } from "react";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 import {
   ArrowRight,
   BellRing,
@@ -406,7 +407,7 @@ export default function FriendsPage() {
                     href={`/profile/${person._id}`}
                     className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition cursor-pointer"
                   >
-                    <img
+                    <RemoteImage
                       src={getUserImage(person)}
                       alt={person.name}
                       className="w-16 h-16 rounded-full object-cover"
@@ -465,7 +466,7 @@ const UserCard = ({
     className="block bg-white dark:bg-zinc-900 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition cursor-pointer"
   >
     <div className="aspect-square relative cursor-pointer group">
-      <img
+      <RemoteImage
         src={getUserImage(person)}
         alt={person.name}
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

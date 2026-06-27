@@ -30,6 +30,7 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
   const loadPosts = useCallback(
     async (mode: "reset" | "more", cursorValue?: string | null) => {
       try {
+        setLoadError(null);
         if (mode === "reset") {
           setLoading(true);
         } else {
@@ -97,8 +99,11 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
           });
           return merged;
         });
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Failed to load posts:", error);
+        setLoadError(
+          error instanceof Error ? error.message : "Failed to load posts",
+        );
       } finally {
         if (mode === "reset") {
           setLoading(false);
@@ -226,7 +231,7 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
           if (!Array.isArray(post.comments)) return post;
           return {
             ...post,
-            comments: post.comments.filter((comment: any) => {
+            comments: post.comments.filter((comment) => {
               const id = normalizeId(comment?._id) || normalizeId(comment?.id);
               return id !== normalizeId(commentId);
             }),
@@ -349,7 +354,22 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
   if (loading) return <FeedSkeleton />;
   return (
     <div className="space-y-2 pb-6">
-      {posts.length === 0 && (
+      {loadError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-white p-4 text-sm text-red-700 dark:border-red-900 dark:bg-zinc-900 dark:text-red-300"
+        >
+          <span>{loadError}</span>
+          <button
+            type="button"
+            onClick={() => void loadPosts("reset", null)}
+            className="font-semibold text-blue-600 hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+      {!loadError && posts.length === 0 && (
         <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-gray-300">
           No posts found.
         </div>

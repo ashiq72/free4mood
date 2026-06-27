@@ -2,7 +2,7 @@
 
 import { jwtDecode, JwtPayload } from "jwt-decode";
 import { assertSuccess, requestJson } from "./client";
-import { getApiCoreUrl, getTenantIdFallback } from "./config";
+import { getApiCoreUrl, getTenantIdFromHost } from "./config";
 import type { ApiResponse } from "./types";
 import type { IUser } from "@/shared/types/user";
 
@@ -26,11 +26,9 @@ type AuthTokenPayload = IUser & JwtPayload;
 
 const getClientTenantId = () => {
   if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    const parts = host.split(".");
-    if (parts.length > 1 && parts[0]) return parts[0];
+    return getTenantIdFromHost(window.location.host);
   }
-  return getTenantIdFallback();
+  return getTenantIdFromHost("");
 };
 
 const setClientCookie = (name: string, value: string, maxAgeSeconds?: number) => {

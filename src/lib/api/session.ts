@@ -1,14 +1,12 @@
 "use client";
 
-import { getTenantIdFallback } from "./config";
+import { getTenantIdFromHost } from "./config";
 
 export const getClientTenantId = () => {
   if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    const parts = host.split(".");
-    if (parts.length > 1 && parts[0]) return parts[0];
+    return getTenantIdFromHost(window.location.host);
   }
-  return getTenantIdFallback();
+  return getTenantIdFromHost("");
 };
 
 export const getAccessToken = () => {

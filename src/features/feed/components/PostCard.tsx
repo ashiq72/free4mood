@@ -6,9 +6,10 @@ import {
   Smile,
   Users,
 } from "lucide-react";
-import dayjs from "dayjs";
 import Image from "next/image";
 import Link from "next/link";
+import { formatDateTime } from "@/shared/lib/utils";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 import { useEffect, useMemo, useState } from "react";
 import { QUICK_EMOJIS } from "@/features/feed/constants/emoji";
 import { getPostLikes, type PostLikeUser } from "@/lib/api/post";
@@ -205,7 +206,7 @@ export const PostCard = ({
       <div className="p-4 flex justify-between items-start">
         <div className="flex items-center gap-3">
           {showAuthorImage ? (
-            <img
+            <RemoteImage
               src={normalizedUserImage}
               alt={user}
               className="h-[35px] w-[35px] rounded-full object-cover"
@@ -231,7 +232,7 @@ export const PostCard = ({
             )}
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <span>
-                {time ? dayjs(time).format("MMM DD, YYYY - h:mm A") : "Just now"}
+                {formatDateTime(time) || "Just now"}
               </span>
               <span>-</span>
               <Users className="w-3 h-3" />
@@ -409,10 +410,10 @@ export const PostCard = ({
             const isCommentMenuOpen =
               Boolean(commentId) && openCommentMenuId === commentId;
             const commentCreatedAt = item.createdAt
-              ? dayjs(item.createdAt).format("MMM DD, YYYY - h:mm A")
+              ? formatDateTime(item.createdAt)
               : "";
             const commentUpdatedAt = item.updatedAt
-              ? dayjs(item.updatedAt).format("MMM DD, YYYY - h:mm A")
+              ? formatDateTime(item.updatedAt)
               : "";
             const commenterProfileHref = commentOwnerId
               ? `/profile/${commentOwnerId}`
@@ -665,7 +666,7 @@ export const PostCard = ({
                     }}
                   >
                     {likedUserImage ? (
-                      <img
+                      <RemoteImage
                         src={likedUserImage}
                         alt={likedUser.name || "User"}
                         className="h-9 w-9 rounded-full object-cover"

@@ -1,5 +1,16 @@
 import type { ApiResponse } from "./types";
 
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly data?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiRequestError";
+  }
+}
+
 const toErrorMessage = (data: unknown, status: number) => {
   if (typeof data === "string" && data.trim()) {
     return data;
@@ -33,20 +44,26 @@ export const parseJson = async <T>(res: Response): Promise<T | string> => {
 
 export const requestJson = async <T>(
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<T> => {
-  const res = await fetch(input, init);
+  let res: Response;
+  try {
+    res = await fetch(input, {
+      ...init,
+      signal: init?.signal || AbortSignal.timeout(30_000),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new Error("The server took too long to respond");
+    }
+    throw new Error("Unable to reach the server");
+  }
+
   const data = await parseJson<T>(res);
 
   if (!res.ok) {
-    const endpoint =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : res.url;
     const message = toErrorMessage(data, res.status);
-    throw new Error(`[${res.status}] ${message} @ ${endpoint}`);
+    throw new ApiRequestError(message, res.status, data);
   }
 
   return data as T;

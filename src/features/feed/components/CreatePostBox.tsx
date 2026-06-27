@@ -17,6 +17,10 @@ import { QUICK_EMOJIS } from "@/features/feed/constants/emoji";
 import { useRouter } from "next/navigation";
 import { getMe } from "@/lib/api/user";
 import type { IUserInfo } from "@/features/profile/types";
+import { RemoteImage } from "@/shared/components/RemoteImage";
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png"]);
 
 export const CreatePostBox = () => {
   const router = useRouter();
@@ -66,6 +70,16 @@ export const CreatePostBox = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
+    if (!ALLOWED_IMAGE_TYPES.has(selected.type)) {
+      toast.error("Choose a JPEG or PNG image");
+      e.target.value = "";
+      return;
+    }
+    if (selected.size > MAX_IMAGE_BYTES) {
+      toast.error("Image must be 5 MB or smaller");
+      e.target.value = "";
+      return;
+    }
 
     if (preview) {
       URL.revokeObjectURL(preview);
@@ -148,7 +162,7 @@ export const CreatePostBox = () => {
           }}
           className="flex items-center gap-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
         >
-          <img
+          <RemoteImage
             src={profileImage}
             width={40}
             height={40}
@@ -173,7 +187,7 @@ export const CreatePostBox = () => {
 
         <form onSubmit={handleCreatePost} className="p-4 sm:p-5 space-y-5">
           <div className="flex items-center gap-3">
-            <img
+            <RemoteImage
               src={profileImage}
               width={44}
               height={44}
@@ -192,6 +206,7 @@ export const CreatePostBox = () => {
             autoFocus
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            maxLength={2000}
             placeholder={`What's on your mind, ${user?.name?.split(" ")[0] || "friend"}?`}
             className="w-full min-h-[140px] sm:min-h-[170px] bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 resize-none outline-none text-sm sm:text-base"
           />
@@ -219,6 +234,7 @@ export const CreatePostBox = () => {
                     height={720}
                     alt="Preview"
                     className="h-full w-full object-cover"
+                    unoptimized
                   />
                 )}
               </div>
@@ -243,7 +259,7 @@ export const CreatePostBox = () => {
                 <input
                   ref={photoInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png"
                   className="hidden"
                   onChange={handleFileChange}
                 />

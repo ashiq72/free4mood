@@ -1,12 +1,10 @@
 import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { getApiCoreUrl, getTenantIdFallback } from "@/lib/api/config";
+import { getApiCoreUrl, getTenantIdFromHost } from "@/lib/api/config";
 
 const getTenantId = async () => {
   const host = (await headers()).get("host") ?? "";
-  const parts = host.split(".");
-  if (parts.length > 1 && parts[0]) return parts[0];
-  return getTenantIdFallback();
+  return getTenantIdFromHost(host);
 };
 
 export async function GET() {

@@ -173,17 +173,8 @@ export const getUnreadMessageCount = async (): Promise<
 };
 
 export const getMessageStreamUrl = () => {
-  const token = getAccessToken();
-  const tenantId = getClientTenantId();
-
-  if (!token) {
+  if (!getAccessToken()) {
     throw new Error("Access token not found");
   }
-
-  const query = new URLSearchParams({
-    token,
-    tenantId,
-  });
-
-  return `${getApiUrl()}/messages/stream?${query.toString()}`;
+  return "/api/messages/stream";
 };

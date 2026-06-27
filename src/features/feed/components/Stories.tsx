@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { getMe } from "@/lib/api/user";
 import { createStory, deleteStory, getStoryFeed, type Story } from "@/lib/api/story";
 import type { IUserInfo } from "@/features/profile/types";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 
 type StoryCard = {
   id: string;
@@ -190,7 +191,7 @@ export const Stories = () => {
           }}
           className="min-w-[110px] h-[200px] rounded-xl overflow-hidden bg-white dark:bg-zinc-800 shadow-sm relative group cursor-pointer hover:opacity-90 transition-opacity"
         >
-          <img
+          <RemoteImage
             src={myStory?.image || myProfileImage}
             className="h-[75%] w-full object-cover"
             alt="My story"
@@ -227,7 +228,7 @@ export const Stories = () => {
           </div>
 
           <div className="absolute top-[65%] left-1/2 -translate-x-1/2 h-10 w-10 rounded-full border-4 border-white dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900">
-            <img
+            <RemoteImage
               src={myProfileImage}
               alt="My profile"
               className="h-full w-full object-cover"
@@ -257,14 +258,14 @@ export const Stories = () => {
               onClick={() => setActiveStory(story)}
               className="min-w-[110px] h-[200px] rounded-xl overflow-hidden relative cursor-pointer group"
             >
-              <img
+              <RemoteImage
                 src={story.image}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 alt={`${story.userName} story`}
               />
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
               <div className="absolute top-3 left-3 w-9 h-9 rounded-full border-4 border-blue-600 overflow-hidden">
-                <img
+                <RemoteImage
                   src={story.userImage || FALLBACK_USER_IMAGE}
                   className="w-full h-full object-cover"
                   alt={story.userName}
@@ -299,14 +300,14 @@ export const Stories = () => {
               <X className="h-4 w-4" />
             </button>
 
-            <img
+            <RemoteImage
               src={activeStory.image}
               alt={`${activeStory.userName} story`}
               className="w-full max-h-[80vh] object-cover"
             />
 
             <div className="absolute top-3 left-3 flex items-center gap-2 text-white">
-              <img
+              <RemoteImage
                 src={activeStory.userImage || FALLBACK_USER_IMAGE}
                 alt={activeStory.userName}
                 className="h-9 w-9 rounded-full object-cover border-2 border-white/80"

@@ -5,6 +5,9 @@ import Image from "next/image";
 import { Button } from "@/shared/ui/button";
 import { updateUser } from "@/lib/api/user";
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png"]);
+
 interface EditProfileCoverModalProps {
   openCoverModal: boolean;
   onClose: () => void;
@@ -63,8 +66,13 @@ export default function EditProfileCoverModal({
     const selected = event.target.files?.[0];
     if (!selected) return;
 
-    if (!selected.type.startsWith("image/")) {
-      setError("Please select a valid image file");
+    if (!ALLOWED_TYPES.has(selected.type)) {
+      setError("Choose a JPEG or PNG image");
+      return;
+    }
+
+    if (selected.size > MAX_IMAGE_BYTES) {
+      setError("Image must be 5 MB or smaller");
       return;
     }
 
@@ -139,7 +147,7 @@ export default function EditProfileCoverModal({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png"
             onChange={handleFileChange}
             className="block w-full text-sm text-gray-600 dark:text-gray-300 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700"
           />

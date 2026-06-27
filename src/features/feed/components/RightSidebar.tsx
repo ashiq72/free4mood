@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MoreHorizontal, Search, X } from "lucide-react";
 import { toast } from "sonner";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 import {
   acceptFriendRequest,
   cancelFriendRequest,
@@ -252,7 +253,7 @@ export const RightSidebar = () => {
                     href={`/profile/${item._id}`}
                     className="mb-2 flex items-center gap-2"
                   >
-                    <img
+                    <RemoteImage
                       src={getUserImage(item)}
                       alt={item.name || "User"}
                       className="h-10 w-10 rounded-full object-cover"
@@ -317,7 +318,7 @@ export const RightSidebar = () => {
                   className="rounded-xl border border-gray-200 p-3 dark:border-zinc-800"
                 >
                   <div className="mb-2 flex items-center gap-2">
-                    <img
+                    <RemoteImage
                       src={getUserImage(from)}
                       className="h-10 w-10 rounded-full object-cover"
                       alt={from.name || "Requester"}
@@ -402,7 +403,7 @@ export const RightSidebar = () => {
                 className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-gray-100 dark:hover:bg-zinc-800"
               >
                 <div className="relative">
-                  <img
+                  <RemoteImage
                     src={getUserImage(friend)}
                     className="h-9 w-9 rounded-full object-cover"
                     alt={friend.name || "Friend"}

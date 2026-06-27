@@ -13,6 +13,7 @@ import {
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 import type { IUserInfo } from "@/features/profile/types";
 import { getMyPosts } from "@/lib/api/post";
 import {
@@ -238,7 +239,7 @@ export const LeftSidebar = () => {
         className="block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/80"
       >
         <div className="flex items-center gap-3">
-          <img
+          <RemoteImage
             src={getUserImage(me)}
             alt="User"
             className="h-11 w-11 rounded-full object-cover"
@@ -324,7 +325,7 @@ export const LeftSidebar = () => {
                 href={`/profile/${person._id}`}
                 className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-gray-100 dark:hover:bg-zinc-800"
               >
-                <img
+                <RemoteImage
                   src={getUserImage(person)}
                   alt={person.name || "User"}
                   className="h-9 w-9 rounded-full object-cover"

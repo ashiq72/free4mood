@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 import {
   AtSign,
   Bell,
@@ -289,7 +290,7 @@ const NotificationRow = ({
     >
       <div className="flex gap-4">
         <div className="relative shrink-0">
-          <img
+          <RemoteImage
             src={notification.actor?.image || "https://picsum.photos/200?random=41"}
             alt={actorName}
             className="w-14 h-14 rounded-full object-cover border border-gray-100 dark:border-zinc-800"
@@ -322,7 +323,7 @@ const NotificationRow = ({
 
         {notification.post?.image && (
           <div className="shrink-0">
-            <img
+            <RemoteImage
               src={notification.post.image}
               alt="Post"
               className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-zinc-800"

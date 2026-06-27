@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 import {
   Loader2,
   MessageSquare,
@@ -539,7 +540,7 @@ export default function MessagesShell({
                           href={getProfileHref(candidate._id)}
                           className="flex min-w-0 flex-1 items-center gap-3 cursor-pointer"
                         >
-                          <img
+                          <RemoteImage
                             src={candidate.image || DEFAULT_AVATAR}
                             alt={candidate.name || "User"}
                             className="h-9 w-9 rounded-full object-cover"
@@ -611,7 +612,7 @@ export default function MessagesShell({
                           className="flex min-w-0 flex-1 items-center gap-3 cursor-pointer"
                         >
                           <div className="relative shrink-0">
-                            <img
+                            <RemoteImage
                               src={participant?.image || DEFAULT_AVATAR}
                               alt={participant?.name || "User"}
                               className="h-11 w-11 rounded-full object-cover"
@@ -672,7 +673,7 @@ export default function MessagesShell({
                   href={getProfileHref(selectedConversation.otherParticipant?._id)}
                   className="flex min-w-0 items-center gap-3 cursor-pointer"
                 >
-                  <img
+                  <RemoteImage
                     src={selectedConversation.otherParticipant?.image || DEFAULT_AVATAR}
                     alt={selectedConversation.otherParticipant?.name || "User"}
                     className="h-11 w-11 rounded-full object-cover"

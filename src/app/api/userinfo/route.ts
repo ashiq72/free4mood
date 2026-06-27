@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
-import { getApiCoreUrl, getTenantIdFallback } from "@/lib/api/config";
+import { getApiCoreUrl, getTenantIdFromHost } from "@/lib/api/config";
+
+const parseBackendResponse = async (response: Response) => {
+  const text = await response.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
 
 const getTenantId = async () => {
   const host = (await headers()).get("host") ?? "";
-  const parts = host.split(".");
-  if (parts.length > 1 && parts[0]) return parts[0];
-  return getTenantIdFallback();
+  return getTenantIdFromHost(host);
 };
 
 export async function PATCH(req: Request) {
@@ -37,6 +46,18 @@ export async function PATCH(req: Request) {
       // 🔁 rebuild FormData
       for (const [key, value] of incomingFormData.entries()) {
         if (value instanceof File) {
+          if (value.size > 5 * 1024 * 1024) {
+            return NextResponse.json(
+              { message: "Image must be 5 MB or smaller" },
+              { status: 413 },
+            );
+          }
+          if (!["image/jpeg", "image/png"].includes(value.type)) {
+            return NextResponse.json(
+              { message: "Only JPEG and PNG images are supported" },
+              { status: 415 },
+            );
+          }
           const buffer = Buffer.from(await value.arrayBuffer());
           const blob = new Blob([buffer], { type: value.type });
           formData.append(key, blob, value.name);
@@ -65,11 +86,14 @@ export async function PATCH(req: Request) {
       }
     );
 
-    const data = await response.json();
+    const data = await parseBackendResponse(response);
 
     if (!response.ok) {
       return NextResponse.json(
-        { message: data.message || "Failed to update user info" },
+        {
+          message: data.message || "Failed to update user info",
+          errorSources: data.errorSources,
+        },
         { status: response.status }
       );
     }

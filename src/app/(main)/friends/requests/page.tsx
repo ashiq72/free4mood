@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Clock } from "lucide-react";
+import { RemoteImage } from "@/shared/components/RemoteImage";
 import {
   acceptFriendRequest,
   cancelFriendRequest,
@@ -262,7 +263,7 @@ export default function FriendRequestsPage() {
                   key={req._id}
                   className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 flex gap-4"
                 >
-                  <img
+                  <RemoteImage
                     src={getUserImage(req.from)}
                     alt={req.from?.name || "User"}
                     className="w-20 h-20 rounded-lg object-cover"
@@ -315,7 +316,7 @@ export default function FriendRequestsPage() {
                   key={req._id}
                   className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 flex gap-4 items-center"
                 >
-                  <img
+                  <RemoteImage
                     src={getUserImage(req.to)}
                     alt={req.to?.name || "User"}
                     className="w-16 h-16 rounded-full object-cover border border-gray-100 dark:border-zinc-700"

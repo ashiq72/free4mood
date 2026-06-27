@@ -1,12 +1,14 @@
 import { assertSuccess, requestJson } from "./client";
 import { getApiCoreUrl, getTenantIdFallback } from "./config";
+import { getClientTenantId } from "./session";
 import type { ApiResponse } from "./types";
 import type { IFormInput } from "@/features/auth/types";
 
 export async function createUser(
   payload: IFormInput
 ): Promise<ApiResponse<unknown>> {
-  const tenantId = getTenantIdFallback();
+  const tenantId =
+    typeof window === "undefined" ? getTenantIdFallback() : getClientTenantId();
   const data = await requestJson<ApiResponse<unknown>>(
     `${getApiCoreUrl()}/users/create-user`,
     {
@@ -35,6 +37,7 @@ export const updateUser = async (
 
   const result = await requestJson<ApiResponse<unknown>>("/api/userinfo", {
     method: "PATCH",
+    credentials: "include",
     headers: isFormData ? undefined : { "Content-Type": "application/json" },
     body: isFormData ? data : JSON.stringify(data),
   });
