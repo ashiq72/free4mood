@@ -312,10 +312,10 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4 lg:gap-8">
               <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-8 h-8 bg-linear-to-tr from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
                   F
                 </div>
-                <span className="hidden md:block text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
+                <span className="hidden md:block text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
                   Free4Mood
                 </span>
               </Link>
