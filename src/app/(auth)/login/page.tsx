@@ -6,14 +6,19 @@ import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { loginUser } from "@/lib/api/auth.client";
+import {
+  decodeAccessTokenUser,
+  loginUser,
+} from "@/lib/api/auth.client";
 import type { LoginPayload } from "@/lib/api/auth.client";
+import { useUser } from "@/shared/context/UserContext";
 
 const inputClassName =
   "w-full rounded-xl border border-slate-200 bg-white px-11 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setUser } = useUser();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -25,9 +30,19 @@ export default function LoginPage() {
   const onSubmit: SubmitHandler<LoginPayload> = async ({ email, password }) => {
     setLoading(true);
     try {
-      await loginUser({ email: email.trim().toLowerCase(), password });
+      const response = await loginUser({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      const user = decodeAccessTokenUser(response.data.accessToken);
+      if (!user) {
+        throw new Error("The server returned an invalid session");
+      }
+
+      setUser(user);
       toast.success("Login successful");
-      router.push("/");
+      router.replace("/");
+      router.refresh();
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Something went wrong";

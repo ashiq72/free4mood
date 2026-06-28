@@ -1,6 +1,8 @@
 export interface IUserInfo {
   _id?: string;
   name?: string;
+  email?: string;
+  gender?: "male" | "female" | "other";
   about?: string;
   bio?: string;
   location?: string;

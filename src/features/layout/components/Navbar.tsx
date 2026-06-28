@@ -80,7 +80,7 @@ export const IconButton = ({
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -99,6 +99,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await logout();
+    setUser(null);
     setIsUserMenuOpen(false);
     router.replace("/login");
     router.refresh();
@@ -443,7 +444,7 @@ export default function Navbar() {
                       className="h-9 w-9 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-black"
                       onError={() => setProfileImage("/default-avatar.svg")}
                     />
-                    <span className="hidden lg:block text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    <span className="hidden lg:block text-xs font-semibold text-gray-700 dark:text-gray-200 capitalize">
                       {user?.name}
                     </span>
                   </button>
@@ -458,8 +459,8 @@ export default function Navbar() {
                           onError={() => setProfileImage("/default-avatar.svg")}
                         />
                         <div>
-                          <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                            {user?.name}
+                          <p className="capitalize font-semibold text-sm text-gray-900 dark:text-white">
+                            {user?.name} 
                           </p>
                           <p className="text-xs text-gray-500">View your profile</p>
                         </div>
@@ -474,7 +475,7 @@ export default function Navbar() {
                               className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition cursor-pointer"
                             >
                               <item.icon className="w-4 h-4 text-gray-500" />
-                              {item.name}
+                              {item.name} 
                             </button>
                           ) : (
                             <Link

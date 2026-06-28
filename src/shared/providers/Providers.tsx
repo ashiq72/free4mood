@@ -10,5 +10,9 @@ export default function Providers({
   children: React.ReactNode;
   user: IUser | null;
 }) {
-  return <UserProvider initialUser={user}>{children}</UserProvider>;
+  return (
+    <UserProvider key={user?.userId ?? "anonymous"} initialUser={user}>
+      {children}
+    </UserProvider>
+  );
 }

@@ -5,10 +5,17 @@ import { assertSuccess, requestJson } from "./client";
 import { getApiCoreUrl, getTenantIdFromHost } from "./config";
 import type { ApiResponse } from "./types";
 import type { IUser } from "@/shared/types/user";
+import { getAccessToken } from "./session";
 
 export interface LoginPayload {
   email: string;
   password: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 type LoginData = {
@@ -17,6 +24,19 @@ type LoginData = {
 };
 
 type AuthTokenPayload = IUser & JwtPayload;
+
+export const decodeAccessTokenUser = (token: string): IUser | null => {
+  try {
+    const decoded = jwtDecode<AuthTokenPayload>(token);
+    if (!decoded?.userId) return null;
+    if (decoded.exp && decoded.exp <= Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+    return decoded;
+  } catch {
+    return null;
+  }
+};
 
 const getClientTenantId = () => {
   if (typeof window !== "undefined") {
@@ -41,14 +61,10 @@ const clearClientCookie = (name: string) => {
 };
 
 const getTokenMaxAge = (token: string) => {
-  try {
-    const decoded = jwtDecode<AuthTokenPayload>(token);
-    if (!decoded?.exp) return undefined;
-    const seconds = decoded.exp - Math.floor(Date.now() / 1000);
-    return seconds > 0 ? seconds : undefined;
-  } catch {
-    return undefined;
-  }
+  const decoded = decodeAccessTokenUser(token);
+  if (!decoded?.exp) return undefined;
+  const seconds = decoded.exp - Math.floor(Date.now() / 1000);
+  return seconds > 0 ? seconds : undefined;
 };
 
 export const loginUser = async (
@@ -79,4 +95,26 @@ export const loginUser = async (
 
 export const logout = () => {
   clearClientCookie("accessToken");
+};
+
+export const changePassword = async (
+  payload: ChangePasswordPayload,
+): Promise<ApiResponse<null>> => {
+  const token = getAccessToken();
+  if (!token) throw new Error("Access token not found");
+
+  const data = await requestJson<ApiResponse<null>>(
+    `${getApiCoreUrl()}/auth/change-password`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "x-tenant-id": getClientTenantId(),
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  return assertSuccess(data, "Failed to change password");
 };
