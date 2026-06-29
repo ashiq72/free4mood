@@ -30,12 +30,12 @@ export const getMe = async <T = unknown>(): Promise<ApiResponse<T>> => {
   return assertSuccess(data, "Failed to fetch user");
 };
 
-export const updateUser = async (
+export const updateUser = async <T = unknown>(
   data: FormData | Record<string, unknown>
-): Promise<ApiResponse<unknown>> => {
+): Promise<ApiResponse<T>> => {
   const isFormData = data instanceof FormData;
 
-  const result = await requestJson<ApiResponse<unknown>>("/api/userinfo", {
+  const result = await requestJson<ApiResponse<T>>("/api/userinfo", {
     method: "PATCH",
     credentials: "include",
     headers: isFormData ? undefined : { "Content-Type": "application/json" },

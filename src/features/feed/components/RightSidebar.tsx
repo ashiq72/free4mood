@@ -134,9 +134,26 @@ export const RightSidebar = () => {
     [friends],
   );
 
+  const pendingUserIdSet = useMemo(
+    () =>
+      new Set([
+        ...incomingRequests
+          .map((request) => request.from?._id)
+          .filter((id): id is string => Boolean(id)),
+        ...outgoingRequests
+          .map((request) => request.to?._id)
+          .filter((id): id is string => Boolean(id)),
+      ]),
+    [incomingRequests, outgoingRequests],
+  );
+
   const filteredSuggestions = useMemo(
-    () => suggestions.filter((item) => !friendIdSet.has(item._id)),
-    [suggestions, friendIdSet],
+    () =>
+      suggestions.filter(
+        (item) =>
+          !friendIdSet.has(item._id) && !pendingUserIdSet.has(item._id),
+      ),
+    [suggestions, friendIdSet, pendingUserIdSet],
   );
 
   const pendingOutgoingMap = useMemo(() => {
@@ -202,6 +219,9 @@ export const RightSidebar = () => {
         toast.success("Request cancelled");
       } else {
         await sendFriendRequest(targetUserId);
+        setSuggestions((prev) =>
+          prev.filter((person) => person._id !== targetUserId),
+        );
         const outgoingRes = await getOutgoingFriendRequests({ limit: 30 });
         setOutgoingRequests(Array.isArray(outgoingRes.data) ? outgoingRes.data : []);
         toast.success("Friend request sent");
@@ -221,14 +241,14 @@ export const RightSidebar = () => {
   };
 
   return (
-    <div className="space-y-6 pl-4">
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <aside className="space-y-6 border-l border-[var(--mood-line)] pl-6">
+      <section>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-            People You May Know
+            People to meet
           </h3>
-          <Link href="/friends" className="text-xs text-blue-600 hover:underline">
-            See all
+          <Link href="/friends" className="text-xs font-semibold text-[var(--mood-jade)] hover:underline">
+            Explore
           </Link>
         </div>
 
@@ -247,16 +267,16 @@ export const RightSidebar = () => {
               return (
                 <div
                   key={item._id}
-                  className="rounded-xl border border-gray-200 p-2 dark:border-zinc-800"
+                   className="border-b border-[var(--mood-line)] py-3 last:border-0"
                 >
                   <Link
                     href={`/profile/${item._id}`}
-                    className="mb-2 flex items-center gap-2"
+                     className="mb-2.5 flex items-center gap-2.5"
                   >
                     <RemoteImage
                       src={getUserImage(item)}
                       alt={item.name || "User"}
-                      className="h-10 w-10 rounded-full object-cover"
+                       className="h-10 w-10 rounded-md object-cover"
                     />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
@@ -271,10 +291,10 @@ export const RightSidebar = () => {
                     type="button"
                     onClick={() => void handleSuggestionAction(item._id)}
                     disabled={actionLoadingId === loadingId}
-                    className={`w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                      pending
-                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
+                     className={`w-full rounded-md px-3 py-2 text-xs font-semibold transition ${
+                       pending
+                         ? "border border-[var(--mood-line)] bg-transparent text-[var(--mood-ink)] hover:bg-[var(--mood-surface-soft)]"
+                         : "bg-[var(--mood-ink)] text-white hover:bg-[var(--mood-coral)] dark:bg-white dark:text-black"
                     } disabled:opacity-60`}
                   >
                     {actionLoadingId === loadingId
@@ -290,14 +310,14 @@ export const RightSidebar = () => {
         )}
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="border-t border-[var(--mood-line)] pt-5">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
             Friend Requests
           </h3>
           <Link
             href="/friends/requests"
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs font-semibold text-[var(--mood-jade)] hover:underline"
           >
             See all
           </Link>
@@ -315,12 +335,12 @@ export const RightSidebar = () => {
               return (
                 <div
                   key={request._id}
-                  className="rounded-xl border border-gray-200 p-3 dark:border-zinc-800"
+                  className="border-b border-[var(--mood-line)] py-3 last:border-0"
                 >
                   <div className="mb-2 flex items-center gap-2">
                     <RemoteImage
                       src={getUserImage(from)}
-                      className="h-10 w-10 rounded-full object-cover"
+                      className="h-10 w-10 rounded-md object-cover"
                       alt={from.name || "Requester"}
                     />
                     <div className="min-w-0">
@@ -337,7 +357,7 @@ export const RightSidebar = () => {
                       type="button"
                       disabled={actionLoadingId === `accept-${request._id}`}
                       onClick={() => void handleAccept(request._id)}
-                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                      className="rounded-md bg-[var(--mood-jade)] px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-60"
                     >
                       {actionLoadingId === `accept-${request._id}`
                         ? "..."
@@ -347,7 +367,7 @@ export const RightSidebar = () => {
                       type="button"
                       disabled={actionLoadingId === `reject-${request._id}`}
                       onClick={() => void handleReject(request._id)}
-                      className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-60"
+                      className="rounded-md border border-[var(--mood-line)] px-3 py-2 text-xs font-semibold text-[var(--mood-ink)] hover:bg-[var(--mood-surface-soft)] disabled:opacity-60"
                     >
                       {actionLoadingId === `reject-${request._id}` ? "..." : "Delete"}
                     </button>
@@ -359,7 +379,7 @@ export const RightSidebar = () => {
         )}
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="border-t border-[var(--mood-line)] pt-5">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
             Contacts
@@ -376,7 +396,7 @@ export const RightSidebar = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 w-full rounded-md border border-gray-200 bg-gray-50 pl-8 pr-2 text-xs outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800"
+            className="h-9 w-full rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] pl-8 pr-2 text-xs outline-none focus:border-[var(--mood-jade)]"
             placeholder="Search contacts"
           />
           {search && (
@@ -400,12 +420,12 @@ export const RightSidebar = () => {
               <Link
                 key={friend._id}
                 href={`/profile/${friend._id}`}
-                className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-gray-100 dark:hover:bg-zinc-800"
+                className="flex items-center gap-3 rounded-md p-2 transition hover:bg-[var(--mood-surface-soft)]"
               >
                 <div className="relative">
                   <RemoteImage
                     src={getUserImage(friend)}
-                    className="h-9 w-9 rounded-full object-cover"
+                    className="h-9 w-9 rounded-md object-cover"
                     alt={friend.name || "Friend"}
                   />
                   <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500 dark:border-zinc-900" />
@@ -418,6 +438,6 @@ export const RightSidebar = () => {
           </div>
         )}
       </section>
-    </div>
+    </aside>
   );
 };

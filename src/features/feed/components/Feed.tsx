@@ -8,6 +8,7 @@ import {
   getAllPosts,
   getMyPosts,
   getUserPosts,
+  togglePostCommentLike,
   togglePostLike,
   updatePostComment,
   updatePost,
@@ -35,6 +36,9 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
   const [cursor, setCursor] = useState<string | null>(null);
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
   const [commentLoadingId, setCommentLoadingId] = useState<string | null>(null);
+  const [commentLikeLoadingId, setCommentLikeLoadingId] = useState<
+    string | null
+  >(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
@@ -207,6 +211,22 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
     }
   };
 
+  const handleCommentLike = async (postId: string, commentId: string) => {
+    setCommentLikeLoadingId(commentId);
+    try {
+      const res = await togglePostCommentLike(postId, commentId);
+      replacePost(res.data);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to update comment like";
+      toast.error(message);
+    } finally {
+      setCommentLikeLoadingId(null);
+    }
+  };
+
   const handleCommentSubmit = async (postId: string, text: string) => {
     setCommentLoadingId(postId);
     try {
@@ -345,15 +365,15 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
 
   if (!user?.userId) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-gray-300">
-        Please <Link href="/login" className="text-blue-600 hover:underline">login</Link> to see your feed.
+      <div className="rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] p-5 text-sm text-[var(--mood-muted)]">
+        Please <Link href="/login" className="font-semibold text-[var(--mood-coral)] hover:underline">login</Link> to see your feed.
       </div>
     );
   }
 
   if (loading) return <FeedSkeleton />;
   return (
-    <div className="space-y-2 pb-6">
+    <div className="space-y-4 pb-6">
       {loadError && (
         <div
           role="alert"
@@ -363,15 +383,16 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
           <button
             type="button"
             onClick={() => void loadPosts("reset", null)}
-            className="font-semibold text-blue-600 hover:underline"
+            className="font-semibold text-[var(--mood-coral)] hover:underline"
           >
             Try again
           </button>
         </div>
       )}
       {!loadError && posts.length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-gray-300">
-          No posts found.
+        <div className="rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] p-8 text-center">
+          <p className="font-semibold text-[var(--mood-ink)]">Your pulse is quiet.</p>
+          <p className="mt-1 text-sm text-[var(--mood-muted)]">Start a thought or connect with a new voice.</p>
         </div>
       )}
       {posts.map((post, index) => {
@@ -408,12 +429,14 @@ export const Feed = ({ scope = "all", targetUserId }: FeedProps) => {
           onCommentSubmit={handleCommentSubmit}
           onDeleteComment={handleDeleteComment}
           onUpdateComment={handleUpdateComment}
+          onToggleCommentLike={handleCommentLike}
           onUpdatePost={handleUpdatePost}
           onDeletePost={handleDeletePost}
           onReportPost={handleReportPost}
           onBlockUser={handleBlockUser}
           likeLoading={likeLoadingId === post._id}
           commentLoading={commentLoadingId === post._id}
+          commentLikeLoadingId={commentLikeLoadingId}
           actionLoading={actionLoadingId === `post-${post._id}` || actionLoadingId === `report-${post._id}` || actionLoadingId === `block-${authorId}`}
           liked={likedByMe}
         />

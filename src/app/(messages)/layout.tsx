@@ -9,7 +9,7 @@ const CommonLayout = async ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div>
+    <div className="pb-16 md:pb-0">
       <Navbar />
       {children}
     </div>

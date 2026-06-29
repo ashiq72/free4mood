@@ -27,6 +27,7 @@ type CommentItem = {
   id?: string;
   user?: { _id?: string; name?: string } | string;
   text?: string;
+  likes?: string[];
   createdAt?: string;
   updatedAt?: string;
 };
@@ -50,12 +51,17 @@ type PostCardProps = {
     commentId: string,
     text: string,
   ) => Promise<void> | void;
+  onToggleCommentLike?: (
+    postId: string,
+    commentId: string,
+  ) => Promise<void> | void;
   onUpdatePost?: (postId: string, text: string) => Promise<void> | void;
   onDeletePost?: (postId: string) => Promise<void> | void;
   onReportPost?: (postId: string) => Promise<void> | void;
   onBlockUser?: (userId: string) => Promise<void> | void;
   likeLoading?: boolean;
   commentLoading?: boolean;
+  commentLikeLoadingId?: string | null;
   actionLoading?: boolean;
   liked?: boolean;
   defaultShowCommentBox?: boolean;
@@ -99,12 +105,14 @@ export const PostCard = ({
   onCommentSubmit,
   onDeleteComment,
   onUpdateComment,
+  onToggleCommentLike,
   onUpdatePost,
   onDeletePost,
   onReportPost,
   onBlockUser,
   likeLoading = false,
   commentLoading = false,
+  commentLikeLoadingId = null,
   actionLoading = false,
   liked = false,
   defaultShowCommentBox = false,
@@ -202,18 +210,18 @@ export const PostCard = ({
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm overflow-hidden">
-      <div className="p-4 flex justify-between items-start">
+    <article className="overflow-hidden rounded-md border border-[var(--mood-line)] border-l-2 border-l-[var(--mood-coral)] bg-[var(--mood-surface)]">
+      <div className="flex items-start justify-between p-4 sm:px-5">
         <div className="flex items-center gap-3">
           {showAuthorImage ? (
             <RemoteImage
               src={normalizedUserImage}
               alt={user}
-              className="h-[35px] w-[35px] rounded-full object-cover"
+              className="h-10 w-10 rounded-md object-cover"
               onError={() => setAuthorImageFailed(true)}
             />
           ) : (
-            <div className="flex h-[35px] w-[35px] items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700 dark:bg-zinc-700 dark:text-zinc-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[var(--mood-surface-soft)] text-xs font-bold text-[var(--mood-ink)]">
               {authorInitial}
             </div>
           )}
@@ -221,20 +229,20 @@ export const PostCard = ({
             {authorProfileHref ? (
               <Link
                 href={authorProfileHref}
-                className="font-bold text-gray-900 dark:text-white text-sm hover:underline cursor-pointer"
+                className="text-sm font-bold text-[var(--mood-ink)] hover:text-[var(--mood-coral)] cursor-pointer"
               >
                 {user}
               </Link>
             ) : (
-              <h4 className="font-bold text-gray-900 dark:text-white text-sm">
+              <h4 className="text-sm font-bold text-[var(--mood-ink)]">
                 {user}
               </h4>
             )}
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-[var(--mood-muted)]">
               <span>
                 {formatDateTime(time) || "Just now"}
               </span>
-              <span>-</span>
+              <span className="mx-0.5 h-0.5 w-0.5 rounded-full bg-current" />
               <Users className="w-3 h-3" />
             </div>
           </div>
@@ -244,13 +252,13 @@ export const PostCard = ({
           <button
             type="button"
             onClick={() => setMenuOpen((prev) => !prev)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-gray-500 cursor-pointer"
+            className="rounded-md p-2 text-[var(--mood-muted)] transition-colors hover:bg-[var(--mood-surface-soft)] cursor-pointer"
           >
             <MoreHorizontal className="w-5 h-5" />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-44 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-20">
+            <div className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] shadow-lg">
               {canManagePost && (
                 <button
                   type="button"
@@ -311,7 +319,7 @@ export const PostCard = ({
         </div>
       </div>
 
-      <div className="px-4 pb-3">
+      <div className="px-4 pb-4 sm:px-5">
         {editing ? (
           <div className="space-y-2">
             <textarea
@@ -341,20 +349,20 @@ export const PostCard = ({
             </div>
           </div>
         ) : (
-          <p className="text-gray-800 dark:text-gray-200 text-sm leading-normal">{content}</p>
+          <p className="whitespace-pre-wrap text-[15px] leading-6 text-[var(--mood-ink)]">{content}</p>
         )}
       </div>
 
       {image && (
-        <div className="px-4 pb-3">
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-black/80 dark:border-zinc-800">
+        <div className="px-3 pb-3 sm:px-5 sm:pb-4">
+          <div className="overflow-hidden rounded-md border border-[var(--mood-line)] bg-[#111412]">
             <div className="relative aspect-[16/10] w-full">
               <Image
                 src={image}
                 alt="Content"
                 width={1280}
                 height={800}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
                 unoptimized
               />
             </div>
@@ -362,10 +370,10 @@ export const PostCard = ({
         </div>
       )}
 
-      <div className="px-4 py-3 flex items-center justify-between text-xs text-gray-500 border-b border-gray-100 dark:border-zinc-800">
+      <div className="mx-4 flex items-center justify-between border-y border-[var(--mood-line)] py-2.5 text-xs text-[var(--mood-muted)] sm:mx-5">
         <div className="flex items-center gap-1">
-          <div className="bg-blue-500 p-1 rounded-full">
-            <Heart className="w-2.5 h-2.5 text-white fill-current" />
+          <div className="rounded-md bg-[var(--mood-coral)] p-1">
+            <Heart className="h-2.5 w-2.5 fill-current text-white" />
           </div>
           <button
             type="button"
@@ -383,7 +391,11 @@ export const PostCard = ({
       {commentsAnchorId ? <div id={commentsAnchorId} /> : null}
 
       {commentList.length > 0 && (
-        <div className="px-4 py-2 space-y-2 border-b border-gray-100 dark:border-zinc-800">
+        <div className="mx-4 border-b border-[var(--mood-line)] py-3 sm:mx-5">
+          <p className="mb-3 text-[10px] font-bold uppercase text-[var(--mood-muted)]">
+            Conversation
+          </p>
+          <div className="space-y-3">
           {commentList.map((item, idx) => {
             const commentId = normalizeCommentId(item._id) || normalizeCommentId(item.id);
             const commenter =
@@ -418,24 +430,32 @@ export const PostCard = ({
             const commenterProfileHref = commentOwnerId
               ? `/profile/${commentOwnerId}`
               : null;
+            const commentLikes = Array.isArray(item.likes) ? item.likes : [];
+            const commentLiked = Boolean(
+              currentUserId &&
+                commentLikes.some(
+                  (likeId) => normalizeCommentId(likeId) === currentUserId,
+                ),
+            );
+            const commentLikeLoading =
+              Boolean(commentId) && commentLikeLoadingId === commentId;
 
             return (
               <div
                 key={commentId || `${commenter}-${idx}`}
-                className="group flex items-start justify-between gap-3 text-sm text-gray-700 dark:text-gray-200"
+                className="group flex items-start justify-between gap-3 text-sm text-[var(--mood-ink)]"
               >
                 <div className="flex-1 min-w-0">
                   {commenterProfileHref ? (
                     <Link
                       href={commenterProfileHref}
-                      className="font-semibold hover:underline cursor-pointer"
+                      className="block text-xs font-bold text-[var(--mood-jade)] hover:underline cursor-pointer"
                     >
                       {commenter}
                     </Link>
                   ) : (
-                    <span className="font-semibold">{commenter}</span>
+                    <span className="block text-xs font-bold text-[var(--mood-jade)]">{commenter}</span>
                   )}
-                  <span>: </span>
                   {isEditingComment ? (
                     <div className="mt-1 space-y-2">
                       <input
@@ -486,14 +506,45 @@ export const PostCard = ({
                   ) : (
                     <span>{item.text || ""}</span>
                   )}
-                  {(commentCreatedAt || commentUpdatedAt) && (
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                      {commentCreatedAt}
-                      {commentUpdatedAt && commentUpdatedAt !== commentCreatedAt
-                        ? ` - Edited ${commentUpdatedAt}`
-                        : ""}
-                    </p>
-                  )}
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                    {(commentCreatedAt || commentUpdatedAt) && (
+                      <span>
+                        {commentCreatedAt}
+                        {commentUpdatedAt &&
+                        commentUpdatedAt !== commentCreatedAt
+                          ? ` - Edited ${commentUpdatedAt}`
+                          : ""}
+                      </span>
+                    )}
+                    {postId && commentId && onToggleCommentLike && (
+                      <button
+                        type="button"
+                        data-comment-like-id={commentId}
+                        aria-label={
+                          commentLiked ? "Unlike comment" : "Like comment"
+                        }
+                        disabled={commentLikeLoading}
+                        onClick={() =>
+                          void onToggleCommentLike(postId, commentId)
+                        }
+                        className={`inline-flex items-center gap-1 font-semibold transition disabled:opacity-50 ${
+                          commentLiked
+                            ? "text-[var(--mood-coral)]"
+                            : "text-[var(--mood-muted)] hover:text-[var(--mood-coral)]"
+                        }`}
+                      >
+                        <Heart
+                          className={`h-3 w-3 ${
+                            commentLiked ? "fill-current" : ""
+                          }`}
+                        />
+                        {commentLiked ? "Unlike" : "Like"}
+                        {commentLikes.length > 0 && (
+                          <span>{commentLikes.length}</span>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div
                   className="relative shrink-0"
@@ -549,11 +600,12 @@ export const PostCard = ({
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
       {showCommentBox && (
-        <div className="px-3 py-2 border-b border-gray-100 dark:border-zinc-800">
+        <div className="px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <input
@@ -561,7 +613,7 @@ export const PostCard = ({
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Write a comment..."
-                className="h-9 w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 pr-10 text-sm outline-none"
+                className="h-10 w-full rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface-soft)] px-3 pr-10 text-sm outline-none focus:border-[var(--mood-jade)]"
               />
               <button
                 type="button"
@@ -575,7 +627,7 @@ export const PostCard = ({
               type="button"
               disabled={commentLoading || !commentText.trim()}
               onClick={() => void handleCommentSubmit()}
-              className="h-9 rounded-md bg-blue-600 px-3 text-xs font-semibold text-white disabled:opacity-60 cursor-pointer"
+              className="h-10 rounded-md bg-[var(--mood-jade)] px-4 text-xs font-semibold text-white disabled:opacity-60 cursor-pointer"
             >
               {commentLoading ? "..." : "Post"}
             </button>
@@ -599,7 +651,7 @@ export const PostCard = ({
         </div>
       )}
 
-      <div className="px-2 py-1 flex items-center justify-between cursor-pointer">
+      <div className="flex items-center gap-1 px-3 py-2 sm:px-4 cursor-pointer">
         <ActionButton
           icon={Heart}
           label="Like"
@@ -693,6 +745,6 @@ export const PostCard = ({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </article>
   );
 };

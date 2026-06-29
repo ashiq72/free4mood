@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Textarea } from "@/shared/ui/textarea";
 import { Input } from "@/shared/ui/input";
 import type { IUserInfo } from "@/features/profile/types";
+import { useUser } from "@/shared/context/UserContext";
 
 /* ---------------- Types ---------------- */
 
@@ -13,11 +14,12 @@ import type { IUserInfo } from "@/features/profile/types";
 interface EditProfileFullModalProps {
   openFullModal: boolean;
   onClose: () => void;
-  loadUser: () => void;
+  loadUser: () => void | Promise<void>;
   userInfo: IUserInfo | null;
 }
 
 interface FormDataType extends Record<string, unknown> {
+  name: string;
   bio: string;
   about: string;
   location: string;
@@ -36,7 +38,9 @@ export default function EditProfileFullModal({
   loadUser,
   userInfo,
 }: EditProfileFullModalProps) {
+  const { setUser } = useUser();
   const [formData, setFormData] = useState<FormDataType>({
+    name: "",
     bio: "",
     about: "",
     location: "",
@@ -51,6 +55,7 @@ export default function EditProfileFullModal({
   useEffect(() => {
     if (openFullModal && userInfo) {
       setFormData({
+        name: userInfo.name || "",
         bio: userInfo.bio || "",
         about: userInfo.about || "",
         location: userInfo.location || "",
@@ -91,13 +96,30 @@ export default function EditProfileFullModal({
 
   /* Submit */
   const handleSubmit = async () => {
+    const name = formData.name.trim();
+    if (!name) {
+      setError("Name is required");
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
 
-      await updateUser(formData);
+      const response = await updateUser<IUserInfo>({
+        ...formData,
+        name,
+      });
+      setUser((current) =>
+        current
+          ? {
+              ...current,
+              name: response.data?.name || name,
+            }
+          : current,
+      );
 
-      await sleep(800); // small UX delay
+      await sleep(250);
       await loadUser(); // 🔥 refresh profile data
       onClose();
     } catch (err: unknown) {
@@ -129,6 +151,18 @@ export default function EditProfileFullModal({
 
         {/* Form */}
         <div className="px-6 py-5 space-y-4">
+          <Field label="Name">
+            <Input
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Your display name"
+              autoComplete="name"
+              maxLength={120}
+              required
+            />
+          </Field>
+
           <Field label="Bio">
             <Input
               name="bio"

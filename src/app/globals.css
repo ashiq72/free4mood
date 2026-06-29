@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../features";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -44,6 +45,16 @@
 
 :root {
   --radius: 0.625rem;
+  --mood-canvas: #f1f4f2;
+  --mood-surface: #ffffff;
+  --mood-surface-soft: #e7ece9;
+  --mood-ink: #171b19;
+  --mood-muted: #66706b;
+  --mood-line: #d8dfdb;
+  --mood-coral: #e85d4a;
+  --mood-coral-deep: #c94535;
+  --mood-jade: #167d68;
+  --mood-gold: #c79028;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -78,6 +89,16 @@
 }
 
 .dark {
+  --mood-canvas: #101311;
+  --mood-surface: #171b18;
+  --mood-surface-soft: #202622;
+  --mood-ink: #f1f5f2;
+  --mood-muted: #9ba69f;
+  --mood-line: #2d3530;
+  --mood-coral: #ff7967;
+  --mood-coral-deep: #ff907f;
+  --mood-jade: #53bda2;
+  --mood-gold: #e2b858;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -117,6 +138,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    background: var(--mood-canvas);
+    color: var(--mood-ink);
   }
 }
 html,
@@ -130,78 +153,37 @@ body {
   touch-action: manipulation;
 }
 
-a {
-  cursor: pointer;
-}
+@layer base {
+  :where(
+    a[href],
+    button:not(:disabled),
+    summary,
+    select:not(:disabled),
+    label[for],
+    input[type="button"]:not(:disabled),
+    input[type="submit"]:not(:disabled),
+    input[type="reset"]:not(:disabled),
+    input[type="checkbox"]:not(:disabled),
+    input[type="radio"]:not(:disabled),
+    input[type="file"]:not(:disabled),
+    [role="button"]:not([aria-disabled="true"]),
+    [role="link"]:not([aria-disabled="true"]),
+    [role="menuitem"]:not([aria-disabled="true"]),
+    [role="option"]:not([aria-disabled="true"]),
+    [role="tab"]:not([aria-disabled="true"]),
+    [role="switch"]:not([aria-disabled="true"])
+  ) {
+    cursor: pointer;
+  }
 
-@keyframes auth-bg-shift {
-  0% {
-    filter: saturate(100%);
-  }
-  100% {
-    filter: saturate(118%);
-  }
-}
-
-@keyframes auth-card-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.985);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes auth-panel-enter {
-  0% {
-    opacity: 0;
-    transform: translateX(-18px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes auth-form-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
+  :where(
+    button:disabled,
+    select:disabled,
+    input:disabled,
+    [aria-disabled="true"],
+    [data-disabled]
+  ) {
+    cursor: not-allowed;
   }
 }
 
-@keyframes auth-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-
-.auth-page-bg {
-  animation: auth-bg-shift 7s ease-in-out infinite alternate;
-}
-
-.auth-card-enter {
-  animation: auth-card-enter 0.55s ease-out both;
-}
-
-.auth-panel-enter {
-  animation: auth-panel-enter 0.6s ease-out 0.12s both;
-}
-
-.auth-form-enter {
-  animation: auth-form-enter 0.55s ease-out 0.16s both;
-}
-
-.auth-float {
-  animation: auth-float 8s ease-in-out infinite;
-}

@@ -31,21 +31,48 @@ const NavItem = ({
   icon: Icon,
   active,
   href,
+  label,
 }: {
   icon: ElementType;
   active?: boolean;
   href: string;
+  label: string;
 }) => (
   <Link
     href={href}
-    className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 group relative ${
+    className={`relative flex h-10 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors ${
       active
-        ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400"
-        : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800"
+        ? "bg-[var(--mood-ink)] text-white dark:bg-white dark:text-black"
+        : "text-[var(--mood-muted)] hover:bg-[var(--mood-surface-soft)] hover:text-[var(--mood-ink)]"
     }`}
   >
-    <Icon className={`w-6 h-6 ${active ? "fill-current" : "stroke-current"}`} />
-    <span className="absolute bottom-0 w-1 h-1 rounded-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity translate-y-1" />
+    <Icon className="h-4 w-4" />
+    <span>{label}</span>
+    {active && (
+      <span className="absolute -bottom-[13px] left-1/2 h-1 w-7 -translate-x-1/2 bg-[var(--mood-coral)]" />
+    )}
+  </Link>
+);
+
+const MobileNavItem = ({
+  icon: Icon,
+  active,
+  href,
+  label,
+}: {
+  icon: ElementType;
+  active?: boolean;
+  href: string;
+  label: string;
+}) => (
+  <Link
+    href={href}
+    className={`flex h-14 flex-col items-center justify-center gap-1 text-[10px] font-bold ${
+      active ? "text-[var(--mood-coral)]" : "text-[var(--mood-muted)]"
+    }`}
+  >
+    <Icon className="h-5 w-5" />
+    <span>{label}</span>
   </Link>
 );
 
@@ -65,11 +92,11 @@ export const IconButton = ({
   return (
     <button
       onClick={onClick}
-      className={`relative p-2.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer ${className}`}
+      className={`relative flex h-10 w-10 items-center justify-center rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] text-[var(--mood-ink)] transition-colors hover:border-[var(--mood-ink)] cursor-pointer ${className}`}
     >
       <Icon className="w-5 h-5" />
       {count ? (
-        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-white dark:border-black">
+        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--mood-coral)] px-1 text-[10px] font-bold text-white ring-2 ring-[var(--mood-surface)]">
           {count}
         </span>
       ) : null}
@@ -81,6 +108,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, setUser } = useUser();
+  const currentUserId = user?.userId;
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -120,7 +148,7 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    if (!currentUserId) {
       setProfileImage("/default-avatar.svg");
       return;
     }
@@ -131,6 +159,19 @@ export default function Navbar() {
         const res = await getMe<IUserInfo>();
         if (!active) return;
         setProfileImage(res.data?.image || "/default-avatar.svg");
+        setUser((current) => {
+          if (!current || !res.data) return current;
+          const nextName = res.data.name || current.name;
+          const nextImage = res.data.image || current.image;
+          if (nextName === current.name && nextImage === current.image) {
+            return current;
+          }
+          return {
+            ...current,
+            name: nextName,
+            image: nextImage,
+          };
+        });
       } catch {
         if (!active) return;
         setProfileImage("/default-avatar.svg");
@@ -142,7 +183,7 @@ export default function Navbar() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [currentUserId, setUser]);
 
   useEffect(() => {
     if (!user) {
@@ -307,32 +348,33 @@ export default function Navbar() {
 
   return (
     <div className="sticky top-0 z-50 w-full">
-      <nav className="bg-white/90 dark:bg-black/90 backdrop-blur-lg border-b border-gray-200 dark:border-zinc-800">
-        <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4 lg:gap-8">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-linear-to-tr from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+      <nav className="border-b border-[var(--mood-line)] bg-[color:var(--mood-surface)]/95 backdrop-blur-xl">
+        <div className="mx-auto max-w-[1540px] px-3 sm:px-6">
+          <div className="flex h-[68px] items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-5">
+              <Link href="/" className="group flex shrink-0 items-center gap-2.5">
+                <div className="relative flex h-9 w-9 items-center justify-center rounded-md bg-[var(--mood-ink)] text-lg font-black text-white dark:bg-white dark:text-black">
                   F
+                  <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[var(--mood-surface)] bg-[var(--mood-coral)]" />
                 </div>
-                <span className="hidden md:block text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
+                <span className="hidden text-lg font-bold text-[var(--mood-ink)] sm:block">
                   Free4Mood
                 </span>
               </Link>
 
               <div className="hidden md:flex items-center" ref={searchRef}>
-                <div className="relative group w-72">
+                <div className="group relative w-64 xl:w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-black transition-all text-sm"
-                    placeholder="Search friends, posts..."
+                    className="block h-10 w-full rounded-md border border-transparent bg-[var(--mood-surface-soft)] pl-10 pr-3 text-sm text-[var(--mood-ink)] outline-none transition placeholder:text-[var(--mood-muted)] focus:border-[var(--mood-jade)] focus:bg-[var(--mood-surface)]"
+                    placeholder="Search the pulse"
                   />
 
                   {searchOpen && (
-                    <div className="absolute left-0 right-0 mt-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl p-2 z-30 max-h-96 overflow-auto">
+                    <div className="absolute left-0 right-0 z-30 mt-2 max-h-96 overflow-auto rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] p-2 shadow-xl">
                       {searchLoading ? (
                         <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
                       ) : (
@@ -357,7 +399,7 @@ export default function Navbar() {
                                       router.push(`/profile/${item._id}`);
                                     }
                                   }}
-                                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                  className="w-full rounded-md px-3 py-2 text-left hover:bg-[var(--mood-surface-soft)]"
                                 >
                                   <p className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</p>
                                   <p className="text-xs text-gray-500 line-clamp-1">{item.bio || "User profile"}</p>
@@ -380,7 +422,7 @@ export default function Navbar() {
                                     setSearchText("");
                                     if (item._id) router.push(`/post/${item._id}`);
                                   }}
-                                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                  className="w-full rounded-md px-3 py-2 text-left hover:bg-[var(--mood-surface-soft)]"
                                 >
                                   <p className="text-sm text-gray-900 dark:text-white line-clamp-2">{item.text || "Post"}</p>
                                   <p className="text-xs text-gray-500">{item.user?.name || "Unknown"}</p>
@@ -396,28 +438,31 @@ export default function Navbar() {
               </div>
             </div>
 
-            <div className="hidden md:flex items-center justify-center flex-1 max-w-xl mx-4">
-              <div className="flex items-center space-x-2 w-full justify-between">
+            <div className="hidden flex-1 items-center justify-center md:flex">
+              <div className="flex items-center gap-1">
                 <NavItem
                   icon={Home}
                   href="/"
                   active={pathname === "/"}
+                  label="Pulse"
                 />
                 <NavItem
                   icon={Users}
                   href="/friends"
                   active={pathname.startsWith("/friends")}
+                  label="Circles"
                 />
                 <NavItem
                   icon={Tv}
                   href="/watch"
                   active={pathname.startsWith("/watch")}
+                  label="Watch"
                 />
               </div>
             </div>
 
             {user ? (
-              <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2">
                 <div className="cursor-pointer">
                   <IconButton
                     icon={MessageCircle}
@@ -436,12 +481,12 @@ export default function Navbar() {
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    className="flex h-10 items-center gap-2 rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] p-1 pr-2 transition-colors hover:border-[var(--mood-ink)] cursor-pointer"
                   >
                     <RemoteImage
                       alt=""
                       src={profileImage}
-                      className="h-9 w-9 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-black"
+                      className="h-8 w-8 shrink-0 rounded object-cover"
                       onError={() => setProfileImage("/default-avatar.svg")}
                     />
                     <span className="hidden lg:block text-xs font-semibold text-gray-700 dark:text-gray-200 capitalize">
@@ -450,8 +495,8 @@ export default function Navbar() {
                   </button>
 
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 p-2">
-                      <div className="p-3 mb-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl flex items-center gap-3">
+                    <div className="absolute right-0 top-full mt-2 w-64 rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] p-2 shadow-xl">
+                      <div className="mb-2 flex items-center gap-3 rounded-md bg-[var(--mood-surface-soft)] p-3">
                         <RemoteImage
                           alt=""
                           src={profileImage}
@@ -472,7 +517,7 @@ export default function Navbar() {
                             <button
                               key={item.name}
                               onClick={item.action}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition cursor-pointer"
+                              className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-[var(--mood-ink)] transition hover:bg-[var(--mood-surface-soft)] cursor-pointer"
                             >
                               <item.icon className="w-4 h-4 text-gray-500" />
                               {item.name} 
@@ -481,7 +526,7 @@ export default function Navbar() {
                             <Link
                               key={item.name}
                               href={item.href!}
-                              className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition"
+                              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-[var(--mood-ink)] transition hover:bg-[var(--mood-surface-soft)]"
                             >
                               <item.icon className="w-4 h-4 text-gray-500" />
                               {item.name}
@@ -496,7 +541,7 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition cursor-pointer"
+                className="inline-flex h-10 items-center rounded-md bg-[var(--mood-ink)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--mood-coral)] dark:bg-white dark:text-black cursor-pointer"
               >
                 Login
               </Link>
@@ -504,6 +549,37 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
+      {user && (
+        <nav
+          aria-label="Mobile social navigation"
+          className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 border-t border-[var(--mood-line)] bg-[color:var(--mood-surface)]/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+        >
+          <MobileNavItem
+            icon={Home}
+            href="/"
+            label="Pulse"
+            active={pathname === "/"}
+          />
+          <MobileNavItem
+            icon={Users}
+            href="/friends"
+            label="Circles"
+            active={pathname.startsWith("/friends")}
+          />
+          <MobileNavItem
+            icon={Tv}
+            href="/watch"
+            label="Watch"
+            active={pathname.startsWith("/watch")}
+          />
+          <MobileNavItem
+            icon={User}
+            href="/profile"
+            label="Profile"
+            active={pathname.startsWith("/profile")}
+          />
+        </nav>
+      )}
     </div>
   );
 }

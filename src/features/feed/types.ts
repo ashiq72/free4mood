@@ -11,6 +11,7 @@ export interface Post {
         id?: string;
         user?: { _id?: string; name?: string } | string;
         text?: string;
+        likes?: string[];
         createdAt?: string;
         updatedAt?: string;
       }[];

@@ -2,26 +2,41 @@ import { CreatePostBox } from "@/features/feed/components/CreatePostBox";
 import { Feed } from "@/features/feed/components/Feed";
 import { LeftSidebar } from "@/features/feed/components/LeftSidebar";
 import { RightSidebar } from "@/features/feed/components/RightSidebar";
+import { Stories } from "@/features/feed/components/Stories";
+import { Sparkles } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-black pt-2">
-      <div className="flex justify-between max-w-[1920px] mx-auto px-0 sm:px-4 gap-8 relative">
-        {/* --- LEFT SIDEBAR (Navigation) --- */}
-        <div className="hidden lg:block w-[280px] xl:w-[320px] shrink-0 sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar">
+    <div className="min-h-screen bg-[var(--mood-canvas)]">
+      <div className="mx-auto grid max-w-[1540px] grid-cols-1 gap-8 px-3 pb-10 pt-6 sm:px-6 lg:grid-cols-[238px_minmax(0,720px)] xl:grid-cols-[238px_minmax(0,720px)_300px]">
+        <div className="sticky top-24 hidden h-[calc(100vh-7rem)] overflow-y-auto lg:block">
           <LeftSidebar />
         </div>
 
-        {/* --- MIDDLE (Feed) --- */}
-        <div className="flex-1 min-w-0 max-w-[700px] mx-auto">
-          <div className="pb-1">
+        <main className="min-w-0">
+          <header className="mb-5 flex items-end justify-between border-b border-[var(--mood-line)] pb-4">
+            <div>
+              <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase text-[var(--mood-coral)]">
+                <Sparkles className="h-3.5 w-3.5" />
+                Live from your circle
+              </div>
+              <h1 className="text-2xl font-bold text-[var(--mood-ink)] sm:text-3xl">
+                Your pulse
+              </h1>
+            </div>
+            <p className="hidden max-w-48 text-right text-xs leading-5 text-[var(--mood-muted)] sm:block">
+              Fresh moments and honest thoughts from people you know.
+            </p>
+          </header>
+
+          <Stories />
+          <div className="mb-4">
             <CreatePostBox />
           </div>
           <Feed />
-        </div>
+        </main>
 
-        {/* --- RIGHT SIDEBAR (Contacts & Requests) --- */}
-        <div className="hidden xl:block w-[280px] xl:w-[320px] shrink-0 sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar">
+        <div className="sticky top-24 hidden h-[calc(100vh-7rem)] overflow-y-auto xl:block">
           <RightSidebar />
         </div>
       </div>

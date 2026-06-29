@@ -12,6 +12,7 @@ import {
   deletePost,
   deletePostComment,
   getPostById,
+  togglePostCommentLike,
   togglePostLike,
   updatePostComment,
   updatePost,
@@ -46,6 +47,9 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
   const [commentLoadingId, setCommentLoadingId] = useState<string | null>(null);
+  const [commentLikeLoadingId, setCommentLikeLoadingId] = useState<
+    string | null
+  >(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
@@ -113,6 +117,25 @@ export default function PostDetailPage() {
       toast.error(message);
     } finally {
       setLikeLoadingId(null);
+    }
+  };
+
+  const handleCommentLike = async (
+    targetPostId: string,
+    commentId: string,
+  ) => {
+    setCommentLikeLoadingId(commentId);
+    try {
+      const res = await togglePostCommentLike(targetPostId, commentId);
+      setPost(res.data);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to update comment like";
+      toast.error(message);
+    } finally {
+      setCommentLikeLoadingId(null);
     }
   };
 
@@ -308,12 +331,14 @@ export default function PostDetailPage() {
         onCommentSubmit={handleCommentSubmit}
         onDeleteComment={handleDeleteComment}
         onUpdateComment={handleUpdateComment}
+        onToggleCommentLike={handleCommentLike}
         onUpdatePost={handleUpdatePost}
         onDeletePost={handleDeletePost}
         onReportPost={handleReportPost}
         onBlockUser={handleBlockUser}
         likeLoading={likeLoadingId === normalizedPostId}
         commentLoading={commentLoadingId === normalizedPostId}
+        commentLikeLoadingId={commentLikeLoadingId}
         actionLoading={
           actionLoadingId === `post-${normalizedPostId}` ||
           actionLoadingId === `report-${normalizedPostId}` ||

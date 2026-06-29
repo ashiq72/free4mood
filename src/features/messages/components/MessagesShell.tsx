@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RemoteImage } from "@/shared/components/RemoteImage";
 import {
+  ArrowLeft,
   Loader2,
+  MessageCircle,
   MessageSquare,
   RefreshCw,
   Search,
   Send,
-  UserRoundPlus,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -23,12 +25,16 @@ import {
   type ConversationItem,
   type MessageItem,
 } from "@/lib/api/message";
-import { searchSocial } from "@/lib/api/social";
+import {
+  getMyFriends,
+  type FollowUser,
+} from "@/lib/api/social";
 import { useUser } from "@/shared/context/UserContext";
 
 const DEFAULT_AVATAR = "/default-avatar.svg";
 const CONVERSATION_LIMIT = 50;
 const MESSAGE_LIMIT = 30;
+const FRIEND_PAGE_LIMIT = 50;
 
 type MessagesShellProps = {
   initialConversationId?: string;
@@ -71,7 +77,9 @@ export default function MessagesShell({
   const { user } = useUser();
 
   const [conversationSearch, setConversationSearch] = useState("");
+  const [activeList, setActiveList] = useState<"chats" | "friends">("chats");
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [friends, setFriends] = useState<FollowUser[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState(
     initialConversationId || "",
   );
@@ -84,27 +92,64 @@ export default function MessagesShell({
   const [composerText, setComposerText] = useState("");
 
   const [loadingConversations, setLoadingConversations] = useState(true);
+  const [loadingFriends, setLoadingFriends] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [refreshingConversations, setRefreshingConversations] = useState(false);
-
-  const [newChatQuery, setNewChatQuery] = useState("");
-  const [newChatLoading, setNewChatLoading] = useState(false);
-  const [newChatUsers, setNewChatUsers] = useState<
-    { _id?: string; name?: string; image?: string; bio?: string }[]
-  >([]);
+  const [listError, setListError] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
   const [startingUserId, setStartingUserId] = useState<string | null>(null);
 
   const messageListRef = useRef<HTMLDivElement>(null);
   const selectedConversationRef = useRef(selectedConversationId);
-  const conversationSearchRef = useRef(conversationSearch);
 
   const selectedConversation = useMemo(
     () =>
       conversations.find((item) => item._id === selectedConversationId) ||
       activeConversation,
     [conversations, selectedConversationId, activeConversation],
+  );
+  const conversationByUserId = useMemo(() => {
+    const map = new Map<string, ConversationItem>();
+    conversations.forEach((conversation) => {
+      const participantId = conversation.otherParticipant?._id;
+      if (participantId) map.set(participantId, conversation);
+    });
+    return map;
+  }, [conversations]);
+  const normalizedSearch = conversationSearch.trim().toLowerCase();
+  const visibleConversations = useMemo(() => {
+    if (!normalizedSearch) return conversations;
+    return conversations.filter((conversation) => {
+      const participant = conversation.otherParticipant;
+      return (
+        (participant?.name || "").toLowerCase().includes(normalizedSearch) ||
+        (conversation.lastMessageText || "")
+          .toLowerCase()
+          .includes(normalizedSearch)
+      );
+    });
+  }, [conversations, normalizedSearch]);
+  const visibleFriends = useMemo(() => {
+    const filtered = normalizedSearch
+      ? friends.filter(
+          (friend) =>
+            (friend.name || "").toLowerCase().includes(normalizedSearch) ||
+            (friend.bio || "").toLowerCase().includes(normalizedSearch),
+        )
+      : friends;
+    return [...filtered].sort((a, b) =>
+      (a.name || "").localeCompare(b.name || ""),
+    );
+  }, [friends, normalizedSearch]);
+  const unreadConversationCount = useMemo(
+    () =>
+      conversations.reduce(
+        (total, conversation) => total + Number(conversation.unreadCount || 0),
+        0,
+      ),
+    [conversations],
   );
   const getProfileHref = (userId?: string) =>
     userId ? `/profile/${userId}` : "/profile";
@@ -120,10 +165,6 @@ export default function MessagesShell({
   useEffect(() => {
     selectedConversationRef.current = selectedConversationId;
   }, [selectedConversationId]);
-
-  useEffect(() => {
-    conversationSearchRef.current = conversationSearch;
-  }, [conversationSearch]);
 
   const upsertConversation = (
     conversation: ConversationItem,
@@ -152,35 +193,68 @@ export default function MessagesShell({
     }
 
     try {
+      setListError(null);
       const response = await getConversations({
         limit: CONVERSATION_LIMIT,
-        search: conversationSearch.trim() || undefined,
       });
       const rows = Array.isArray(response.data) ? response.data : [];
       setConversations(rows);
-
-      if (!selectedConversationId && rows.length > 0) {
-        setSelectedConversationId(
-          initialConversationId && rows.some((item) => item._id === initialConversationId)
-            ? initialConversationId
-            : rows[0]._id,
-        );
-      }
-
-      if (
-        selectedConversationId &&
-        !rows.some((item) => item._id === selectedConversationId)
-      ) {
-        setSelectedConversationId("");
-        setMessages([]);
-        setActiveConversation(null);
-      }
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Failed to load conversations"));
+      const message = getErrorMessage(error, "Failed to load conversations");
+      setListError(message);
+      if (!opts?.silent) toast.error(message);
     } finally {
       setLoadingConversations(false);
       setRefreshingConversations(false);
     }
+  };
+
+  const loadFriends = async (silent = false) => {
+    if (!user?.userId) return;
+    if (!silent) setLoadingFriends(true);
+
+    try {
+      setListError(null);
+      const allFriends: FollowUser[] = [];
+      const seenIds = new Set<string>();
+      let cursor: string | undefined;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await getMyFriends({
+          limit: FRIEND_PAGE_LIMIT,
+          cursor,
+        });
+        const rows = Array.isArray(response.data) ? response.data : [];
+        rows.forEach((friend) => {
+          if (!friend._id || seenIds.has(friend._id)) return;
+          seenIds.add(friend._id);
+          allFriends.push(friend);
+        });
+
+        const nextCursor = response.meta?.nextCursor || undefined;
+        hasMore = Boolean(response.meta?.hasMore && nextCursor);
+        if (nextCursor === cursor) break;
+        cursor = nextCursor;
+      }
+
+      setFriends(allFriends);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, "Failed to load friends");
+      setListError(message);
+      if (!silent) toast.error(message);
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
+
+  const refreshWorkspace = async () => {
+    setRefreshingConversations(true);
+    await Promise.all([
+      loadConversations({ silent: true }),
+      loadFriends(true),
+    ]);
+    setRefreshingConversations(false);
   };
 
   const loadMessages = async (
@@ -188,6 +262,7 @@ export default function MessagesShell({
     mode: "reset" | "older" = "reset",
   ) => {
     if (!user?.userId || !conversationId) return;
+    const previousScrollHeight = messageListRef.current?.scrollHeight || 0;
 
     if (mode === "reset") {
       setLoadingMessages(true);
@@ -196,6 +271,7 @@ export default function MessagesShell({
     }
 
     try {
+      setMessageError(null);
       const response = await getConversationMessages(conversationId, {
         limit: MESSAGE_LIMIT,
         cursor: mode === "older" ? messageCursor || undefined : undefined,
@@ -224,9 +300,17 @@ export default function MessagesShell({
 
       if (mode === "reset") {
         window.setTimeout(scrollToBottom, 60);
+      } else {
+        window.setTimeout(() => {
+          const node = messageListRef.current;
+          if (!node) return;
+          node.scrollTop += node.scrollHeight - previousScrollHeight;
+        }, 40);
       }
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Failed to load messages"));
+      const message = getErrorMessage(error, "Failed to load messages");
+      setMessageError(message);
+      toast.error(message);
     } finally {
       setLoadingMessages(false);
       setLoadingMoreMessages(false);
@@ -235,14 +319,26 @@ export default function MessagesShell({
 
   const handleConversationSelect = (conversationId: string) => {
     setSelectedConversationId(conversationId);
+    setActiveConversation(
+      conversations.find((conversation) => conversation._id === conversationId) ||
+        null,
+    );
     router.push(`/messages/${conversationId}`);
+  };
+
+  const handleBackToMessages = () => {
+    setSelectedConversationId("");
+    setActiveConversation(null);
+    setMessages([]);
+    setMessageError(null);
+    router.push("/messages");
   };
 
   const handleSendMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const text = composerText.trim();
-    if (!text || !selectedConversationId) return;
+    if (!text || !selectedConversationId || sending) return;
 
     try {
       setSending(true);
@@ -274,6 +370,13 @@ export default function MessagesShell({
 
   const handleStartConversation = async (targetUserId?: string) => {
     if (!targetUserId) return;
+
+    const existingConversation = conversationByUserId.get(targetUserId);
+    if (existingConversation) {
+      handleConversationSelect(existingConversation._id);
+      return;
+    }
+
     try {
       setStartingUserId(targetUserId);
       const response = await startConversation(targetUserId);
@@ -281,8 +384,8 @@ export default function MessagesShell({
       if (!conversation?._id) return;
       upsertConversation(conversation, { pinTop: true });
       setSelectedConversationId(conversation._id);
-      setNewChatQuery("");
-      setNewChatUsers([]);
+      setActiveConversation(conversation);
+      setActiveList("chats");
       router.push(`/messages/${conversation._id}`);
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to start conversation"));
@@ -299,18 +402,9 @@ export default function MessagesShell({
 
   useEffect(() => {
     if (!user?.userId) return;
-    void loadConversations();
+    void Promise.all([loadConversations(), loadFriends()]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.userId]);
-
-  useEffect(() => {
-    if (!user?.userId) return;
-    const timer = window.setTimeout(() => {
-      void loadConversations();
-    }, 300);
-    return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationSearch, user?.userId]);
 
   useEffect(() => {
     if (!selectedConversationId || !user?.userId) return;
@@ -323,36 +417,6 @@ export default function MessagesShell({
 
   useEffect(() => {
     if (!user?.userId) return;
-    const query = newChatQuery.trim();
-    if (query.length < 2) {
-      setNewChatUsers([]);
-      return;
-    }
-
-    let active = true;
-    setNewChatLoading(true);
-    const timer = window.setTimeout(async () => {
-      try {
-        const response = await searchSocial(query, { limitUsers: 8, limitPosts: 0 });
-        if (!active) return;
-        const users = Array.isArray(response.data?.users) ? response.data.users : [];
-        setNewChatUsers(users.filter((item) => item._id && item._id !== user.userId));
-      } catch {
-        if (!active) return;
-        setNewChatUsers([]);
-      } finally {
-        if (active) setNewChatLoading(false);
-      }
-    }, 250);
-
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [newChatQuery, user?.userId]);
-
-  useEffect(() => {
-    if (!user?.userId) return;
 
     let active = true;
     let stream: EventSource | null = null;
@@ -362,7 +426,6 @@ export default function MessagesShell({
       try {
         const conversationRes = await getConversations({
           limit: CONVERSATION_LIMIT,
-          search: conversationSearchRef.current.trim() || undefined,
         });
         if (!active) return;
 
@@ -491,19 +554,33 @@ export default function MessagesShell({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="border-b border-gray-100 p-4 dark:border-zinc-800">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Messages
-              </h1>
+    <div className="mx-auto max-w-7xl px-0 py-0 sm:px-4 sm:py-4">
+      <div className="grid h-[calc(100svh-4.5rem)] min-h-[32rem] overflow-hidden border-y border-gray-200 bg-white sm:h-[calc(100svh-6.5rem)] sm:rounded-lg sm:border lg:grid-cols-[360px_minmax(0,1fr)] dark:border-zinc-800 dark:bg-zinc-900">
+        <aside
+          className={`min-h-0 flex-col border-r border-gray-200 dark:border-zinc-800 ${
+            selectedConversationId ? "hidden lg:flex" : "flex"
+          }`}
+        >
+          <div className="border-b border-gray-200 p-4 dark:border-zinc-800">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Messages
+                </h1>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {friends.length} {friends.length === 1 ? "friend" : "friends"}
+                  {unreadConversationCount > 0
+                    ? ` · ${unreadConversationCount} unread`
+                    : ""}
+                </p>
+              </div>
               <button
                 type="button"
-                onClick={() => void loadConversations({ silent: true })}
+                title="Refresh messages"
+                aria-label="Refresh messages"
+                onClick={() => void refreshWorkspace()}
                 disabled={refreshingConversations}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition hover:bg-gray-50 disabled:opacity-60 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-600 transition hover:bg-gray-50 disabled:opacity-60 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${refreshingConversations ? "animate-spin" : ""}`}
@@ -512,104 +589,99 @@ export default function MessagesShell({
             </div>
 
             <div className="relative mb-3">
-              <UserRoundPlus className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
-                type="text"
-                value={newChatQuery}
-                onChange={(event) => setNewChatQuery(event.target.value)}
-                placeholder="Start new chat..."
-                className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 outline-none ring-blue-500/20 transition focus:ring-4 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-100"
+                type="search"
+                value={conversationSearch}
+                onChange={(event) => setConversationSearch(event.target.value)}
+                placeholder={
+                  activeList === "chats"
+                    ? "Search chats"
+                    : "Search friends"
+                }
+                aria-label={
+                  activeList === "chats"
+                    ? "Search chats"
+                    : "Search friends"
+                }
+                className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm text-gray-900 outline-none ring-blue-500/20 transition focus:border-blue-500 focus:ring-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-100"
               />
             </div>
 
-            {newChatQuery.trim().length >= 2 && (
-              <div className="mb-3 max-h-48 overflow-auto rounded-xl border border-gray-100 bg-gray-50/60 p-2 dark:border-zinc-700 dark:bg-zinc-800/40">
-                {newChatLoading ? (
-                  <div className="flex items-center gap-2 px-2 py-2 text-sm text-gray-500 dark:text-gray-400">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Searching users...
-                  </div>
-                ) : newChatUsers.length ? (
-                  <div className="space-y-1">
-                    {newChatUsers.map((candidate) => (
-                      <div
-                        key={candidate._id}
-                        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-white dark:hover:bg-zinc-800"
-                      >
-                        <Link
-                          href={getProfileHref(candidate._id)}
-                          className="flex min-w-0 flex-1 items-center gap-3 cursor-pointer"
-                        >
-                          <RemoteImage
-                            src={candidate.image || DEFAULT_AVATAR}
-                            alt={candidate.name || "User"}
-                            className="h-9 w-9 rounded-full object-cover"
-                          />
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-gray-900 dark:text-white hover:underline">
-                              {candidate.name || "Unknown user"}
-                            </p>
-                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                              {candidate.bio || "Tap to start a conversation"}
-                            </p>
-                          </div>
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => void handleStartConversation(candidate._id)}
-                          disabled={startingUserId === candidate._id}
-                          className="rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-zinc-700 dark:text-gray-200 dark:hover:bg-zinc-700"
-                        >
-                          {startingUserId === candidate._id ? "..." : "Chat"}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="px-2 py-2 text-sm text-gray-500 dark:text-gray-400">
-                    No users found
-                  </p>
+            <div className="grid grid-cols-2 rounded-md bg-gray-100 p-1 dark:bg-zinc-800">
+              <button
+                type="button"
+                onClick={() => setActiveList("chats")}
+                className={`flex h-9 items-center justify-center gap-2 rounded-sm text-sm font-medium transition ${
+                  activeList === "chats"
+                    ? "bg-white text-gray-900 shadow-sm dark:bg-zinc-700 dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                }`}
+              >
+                <MessageCircle className="h-4 w-4" />
+                Chats
+                {unreadConversationCount > 0 && (
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] text-white">
+                    {unreadConversationCount > 99
+                      ? "99+"
+                      : unreadConversationCount}
+                  </span>
                 )}
-              </div>
-            )}
-
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={conversationSearch}
-                onChange={(event) => setConversationSearch(event.target.value)}
-                placeholder="Search conversations"
-                className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 outline-none ring-blue-500/20 transition focus:ring-4 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-100"
-              />
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveList("friends")}
+                className={`flex h-9 items-center justify-center gap-2 rounded-sm text-sm font-medium transition ${
+                  activeList === "friends"
+                    ? "bg-white text-gray-900 shadow-sm dark:bg-zinc-700 dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                Friends
+                <span className="text-xs text-gray-400">{friends.length}</span>
+              </button>
             </div>
           </div>
 
-          <div className="max-h-[70vh] overflow-y-auto">
-            {loadingConversations ? (
-              <div className="flex items-center justify-center gap-2 p-8 text-sm text-gray-500 dark:text-gray-400">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading conversations...
-              </div>
-            ) : conversations.length ? (
-              <ul className="divide-y divide-gray-100 dark:divide-zinc-800">
-                {conversations.map((conversation) => {
-                  const participant = conversation.otherParticipant;
-                  const isSelected = selectedConversationId === conversation._id;
-                  return (
-                    <li key={conversation._id}>
-                      <div
-                        onClick={() => handleConversationSelect(conversation._id)}
-                        className={`flex w-full items-center gap-3 px-4 py-3 text-left transition ${
-                          isSelected
-                            ? "bg-blue-50 dark:bg-blue-900/20"
-                            : "hover:bg-gray-50 dark:hover:bg-zinc-800/60"
-                        } cursor-pointer`}
-                      >
-                        <Link
-                          href={getProfileHref(participant?._id)}
-                          onClick={(event) => event.stopPropagation()}
-                          className="flex min-w-0 flex-1 items-center gap-3 cursor-pointer"
+          {listError && (
+            <div className="m-3 flex items-center justify-between gap-3 border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+              <span>{listError}</span>
+              <button
+                type="button"
+                onClick={() => void refreshWorkspace()}
+                className="shrink-0 font-semibold hover:underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {activeList === "chats" ? (
+              loadingConversations ? (
+                <div className="flex items-center justify-center gap-2 p-8 text-sm text-gray-500 dark:text-gray-400">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading chats...
+                </div>
+              ) : visibleConversations.length ? (
+                <ul>
+                  {visibleConversations.map((conversation) => {
+                    const participant = conversation.otherParticipant;
+                    const isSelected =
+                      selectedConversationId === conversation._id;
+                    return (
+                      <li key={conversation._id}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleConversationSelect(conversation._id)
+                          }
+                          className={`flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left transition dark:border-zinc-800 ${
+                            isSelected
+                              ? "bg-blue-50 dark:bg-blue-950/30"
+                              : "hover:bg-gray-50 dark:hover:bg-zinc-800/60"
+                          }`}
                         >
                           <div className="relative shrink-0">
                             <RemoteImage
@@ -627,51 +699,175 @@ export default function MessagesShell({
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="truncate text-sm font-semibold text-gray-900 hover:underline dark:text-white">
+                              <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
                                 {participant?.name || "Unknown user"}
                               </p>
                               <span className="shrink-0 text-[11px] text-gray-500 dark:text-gray-400">
                                 {formatTime(conversation.lastMessageAt)}
                               </span>
                             </div>
-                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                              {conversation.lastMessageText || "No messages yet"}
+                            <p
+                              className={`truncate text-xs ${
+                                conversation.unreadCount > 0
+                                  ? "font-semibold text-gray-800 dark:text-gray-200"
+                                  : "text-gray-500 dark:text-gray-400"
+                              }`}
+                            >
+                              {conversation.lastMessageSender?._id ===
+                              user.userId
+                                ? "You: "
+                                : ""}
+                              {conversation.lastMessageText ||
+                                "Conversation started"}
                             </p>
                           </div>
-                        </Link>
-                      </div>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="px-6 py-12 text-center">
+                  <MessageSquare className="mx-auto h-7 w-7 text-gray-300 dark:text-zinc-600" />
+                  <p className="mt-3 text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {normalizedSearch ? "No chats found" : "No chats yet"}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Open Friends to start a conversation.
+                  </p>
+                </div>
+              )
+            ) : loadingFriends ? (
+              <div className="flex items-center justify-center gap-2 p-8 text-sm text-gray-500 dark:text-gray-400">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading friends...
+              </div>
+            ) : visibleFriends.length ? (
+              <ul>
+                {visibleFriends.map((friend) => {
+                  const existingConversation = conversationByUserId.get(
+                    friend._id,
+                  );
+                  return (
+                    <li key={friend._id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void handleStartConversation(friend._id)
+                        }
+                        disabled={startingUserId === friend._id}
+                        className="flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left transition hover:bg-gray-50 disabled:opacity-60 dark:border-zinc-800 dark:hover:bg-zinc-800/60"
+                      >
+                        <RemoteImage
+                          src={
+                            friend.image ||
+                            friend.profileImage ||
+                            DEFAULT_AVATAR
+                          }
+                          alt={friend.name || "Friend"}
+                          className="h-11 w-11 shrink-0 rounded-full object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                            {friend.name || "Unknown user"}
+                          </p>
+                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                            {startingUserId === friend._id
+                              ? "Opening chat..."
+                              : existingConversation
+                                ? "Continue conversation"
+                                : friend.bio || "Start a conversation"}
+                          </p>
+                        </div>
+                        {startingUserId === friend._id ? (
+                          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-600" />
+                        ) : (
+                          <MessageCircle className="h-4 w-4 shrink-0 text-blue-600" />
+                        )}
+                      </button>
                     </li>
                   );
                 })}
               </ul>
             ) : (
-              <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                No conversations yet
+              <div className="px-6 py-12 text-center">
+                <Users className="mx-auto h-7 w-7 text-gray-300 dark:text-zinc-600" />
+                <p className="mt-3 text-sm font-medium text-gray-700 dark:text-gray-200">
+                  {normalizedSearch ? "No friends found" : "No friends yet"}
+                </p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Friends will appear here when requests are accepted.
+                </p>
               </div>
             )}
           </div>
         </aside>
 
-        <section className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <section
+          className={`min-h-0 bg-white dark:bg-zinc-900 ${
+            selectedConversationId ? "flex" : "hidden lg:flex"
+          }`}
+        >
           {!selectedConversation ? (
-            <div className="flex h-[75vh] flex-col items-center justify-center px-6 text-center">
-              <div className="mb-4 rounded-full bg-gray-100 p-4 dark:bg-zinc-800">
-                <MessageSquare className="h-8 w-8 text-gray-500 dark:text-gray-300" />
+            selectedConversationId ? (
+              messageError ? (
+                <div className="flex h-full w-full flex-col items-center justify-center px-6 text-center">
+                  <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                    {messageError}
+                  </p>
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleBackToMessages}
+                      className="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-zinc-700 dark:text-gray-200 dark:hover:bg-zinc-800"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void loadMessages(selectedConversationId, "reset")
+                      }
+                      className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Opening conversation...
+                </div>
+              )
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center px-6 text-center">
+                <div className="mb-4 rounded-full bg-gray-100 p-4 dark:bg-zinc-800">
+                  <MessageSquare className="h-8 w-8 text-gray-500 dark:text-gray-300" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Choose someone to message
+                </h2>
+                <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+                  Select an existing chat or open Friends to start a new
+                  conversation.
+                </p>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Select a conversation
-              </h2>
-              <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
-                Pick a chat from the left panel or start a new one by searching a
-                user.
-              </p>
-            </div>
+            )
           ) : (
-            <div className="flex h-[75vh] flex-col">
+            <div className="flex h-full w-full min-w-0 flex-col">
               <header className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={handleBackToMessages}
+                  aria-label="Back to messages"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 lg:hidden dark:text-gray-300 dark:hover:bg-zinc-800"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
                 <Link
                   href={getProfileHref(selectedConversation.otherParticipant?._id)}
-                  className="flex min-w-0 items-center gap-3 cursor-pointer"
+                  className="flex min-w-0 items-center gap-3"
                 >
                   <RemoteImage
                     src={selectedConversation.otherParticipant?.image || DEFAULT_AVATAR}
@@ -692,7 +888,7 @@ export default function MessagesShell({
 
               <div
                 ref={messageListRef}
-                className="flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-white to-gray-50 px-4 py-4 dark:from-zinc-900 dark:to-zinc-950"
+                className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-gray-50/60 px-4 py-4 dark:bg-zinc-950/60"
               >
                 {loadingMessages ? (
                   <div className="flex items-center justify-center gap-2 py-10 text-sm text-gray-500 dark:text-gray-400">
@@ -701,6 +897,20 @@ export default function MessagesShell({
                   </div>
                 ) : (
                   <>
+                    {messageError && (
+                      <div className="flex items-center justify-between gap-3 border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                        <span>{messageError}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void loadMessages(selectedConversationId, "reset")
+                          }
+                          className="shrink-0 font-semibold hover:underline"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    )}
                     {messagesHasMore && (
                       <div className="flex justify-center">
                         <button
@@ -763,12 +973,21 @@ export default function MessagesShell({
                   <textarea
                     value={composerText}
                     onChange={(event) => setComposerText(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" || event.shiftKey) return;
+                      event.preventDefault();
+                      event.currentTarget.form?.requestSubmit();
+                    }}
                     placeholder="Type a message..."
+                    aria-label="Message"
+                    maxLength={5000}
                     rows={1}
-                    className="max-h-28 min-h-11 flex-1 resize-y rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none ring-blue-500/20 transition focus:ring-4 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-100"
+                    className="max-h-28 min-h-11 flex-1 resize-y rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none ring-blue-500/20 transition focus:border-blue-500 focus:ring-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-100"
                   />
                   <button
                     type="submit"
+                    title="Send message"
+                    aria-label="Send message"
                     disabled={sending || !composerText.trim()}
                     className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:opacity-60"
                   >

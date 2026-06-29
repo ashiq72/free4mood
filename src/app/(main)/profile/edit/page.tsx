@@ -1,9 +1,5 @@
-import ProfileEdit from "@/features/profile/components/edit/ProfileEdit";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return (
-    <div>
-      <ProfileEdit />
-    </div>
-  );
+  redirect("/settings");
 }

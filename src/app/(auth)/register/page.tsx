@@ -4,20 +4,28 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { ArrowRight, Lock, Mail, UserRound } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  LockKeyhole,
+  Mail,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
+import { AuthShell } from "@/features/auth/components/AuthShell";
 import { createUser } from "@/lib/api/user";
 import { GenderEnum, IFormInput } from "@/features/auth/types";
 
 const inputClassName =
-  "w-full rounded-xl border border-slate-200 bg-white px-11 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
-
-const selectClassName =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
+  "h-12 w-full rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] px-11 pr-12 text-sm text-[var(--mood-ink)] outline-none transition placeholder:text-[var(--mood-muted)] focus:border-[var(--mood-jade)] focus:ring-2 focus:ring-[color:var(--mood-jade)]/10";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -28,7 +36,11 @@ export default function RegisterPage() {
   const onSubmit: SubmitHandler<IFormInput> = async (data) => {
     setLoading(true);
     try {
-      await createUser(data);
+      await createUser({
+        ...data,
+        name: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+      });
       toast.success("Account created successfully");
       router.push("/login");
     } catch (error: unknown) {
@@ -41,147 +53,187 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-page-bg relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_#dbeafe,_#f8fafc_42%)] p-4 sm:p-6">
-      <div className="auth-float pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-cyan-300/35 blur-3xl" />
-      <div className="auth-float pointer-events-none absolute -left-20 bottom-10 h-72 w-72 rounded-full bg-indigo-300/35 blur-3xl" style={{ animationDelay: "1.4s" }} />
-      <div className="auth-float pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-200/20 blur-3xl" style={{ animationDelay: "0.8s" }} />
+    <AuthShell mode="register">
+      <header className="mb-7">
+        <p className="text-[11px] font-bold uppercase text-[var(--mood-coral)]">
+          Join the circle
+        </p>
+        <h2 className="mt-2 text-3xl font-bold text-[var(--mood-ink)]">
+          Create your space
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--mood-muted)]">
+          One account for your moments, people, and conversations.
+        </p>
+      </header>
 
-      <div className="auth-card-enter relative grid w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/70 bg-white/95 shadow-[0_35px_85px_-35px_rgba(15,23,42,0.55)] backdrop-blur md:grid-cols-2">
-        <div className="auth-panel-enter relative hidden overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-blue-800 p-10 text-white md:flex md:flex-col md:justify-between">
-          <div className="pointer-events-none absolute -right-16 top-6 h-44 w-44 rounded-full bg-blue-200/20 blur-2xl" />
-          <div className="pointer-events-none absolute bottom-10 left-8 h-24 w-24 rounded-full border border-blue-100/40" />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-200">
-              Free4Mood
-            </p>
-            <h1 className="mt-5 text-3xl font-semibold leading-tight">
-              Create your account.
-            </h1>
-            <p className="mt-3 text-sm text-slate-200">
-              Join the community and start sharing instantly.
-            </p>
-          </div>
-
-          <div className="space-y-3 text-sm text-slate-200">
-            <p>Build your profile.</p>
-            <p>Find people and connect.</p>
-            <p>Post, react, and chat in one place.</p>
-          </div>
-        </div>
-
-        <div className="auth-form-enter p-6 sm:p-10">
-          <div className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
-              Register
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-              Create a new account
-            </h2>
-            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-              The first load may take up to 40 seconds. Please wait.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Full name</label>
-              <div className="relative">
-                <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  {...register("name", {
-                    required: "Full name is required",
-                    minLength: { value: 2, message: "At least 2 characters" },
-                  })}
-                  placeholder="Enter your name"
-                  className={inputClassName}
-                />
-              </div>
-              {errors.name && (
-                <p className="text-xs text-red-500">{errors.name.message}</p>
-              )}
+            <label
+              htmlFor="register-name"
+              className="mb-2 block text-sm font-semibold text-[var(--mood-ink)]"
+            >
+              Full name
+            </label>
+            <div className="relative">
+              <UserRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--mood-muted)]" />
+              <input
+                id="register-name"
+                autoComplete="name"
+                aria-invalid={Boolean(errors.name)}
+                {...register("name", {
+                  required: "Full name is required",
+                  minLength: { value: 2, message: "At least 2 characters" },
+                })}
+                placeholder="Your name"
+                className={inputClassName}
+              />
             </div>
+            {errors.name && (
+              <p className="mt-1.5 text-xs font-medium text-red-600">
+                {errors.name.message}
+              </p>
+            )}
+          </div>
 
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Gender</label>
+          <div>
+            <label
+              htmlFor="register-gender"
+              className="mb-2 block text-sm font-semibold text-[var(--mood-ink)]"
+            >
+              Gender
+            </label>
+            <div className="relative">
               <select
+                id="register-gender"
+                aria-invalid={Boolean(errors.gender)}
                 {...register("gender", { required: "Gender is required" })}
-                className={selectClassName}
+                className="h-12 w-full appearance-none rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] px-3 pr-10 text-sm text-[var(--mood-ink)] outline-none transition focus:border-[var(--mood-jade)] focus:ring-2 focus:ring-[color:var(--mood-jade)]/10"
               >
-                <option value="">Choose gender</option>
+                <option value="">Choose</option>
                 <option value={GenderEnum.male}>Male</option>
                 <option value={GenderEnum.female}>Female</option>
                 <option value={GenderEnum.other}>Other</option>
               </select>
-              {errors.gender && (
-                <p className="text-xs text-red-500">{errors.gender.message}</p>
-              )}
+              <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--mood-muted)]" />
             </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Email</label>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  autoComplete="email"
-                  {...register("email", {
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: "Enter a valid email address",
-                    },
-                  })}
-                  placeholder="you@example.com"
-                  className={inputClassName}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-xs text-red-500">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Password</label>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  {...register("password", {
-                    required: "Password is required",
-                    minLength: { value: 6, message: "At least 6 characters" },
-                    pattern: {
-                      value: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/,
-                      message: "Must include letters and numbers",
-                    },
-                  })}
-                  placeholder="Create password"
-                  className={inputClassName}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-xs text-red-500">{errors.password.message}</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {loading ? "Creating..." : "Create account"}
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-slate-600">
-            Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700">
-              Login
-            </Link>
-          </p>
+            {errors.gender && (
+              <p className="mt-1.5 text-xs font-medium text-red-600">
+                {errors.gender.message}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+
+        <div>
+          <label
+            htmlFor="register-email"
+            className="mb-2 block text-sm font-semibold text-[var(--mood-ink)]"
+          >
+            Email address
+          </label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--mood-muted)]" />
+            <input
+              id="register-email"
+              type="email"
+              autoComplete="email"
+              aria-invalid={Boolean(errors.email)}
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Enter a valid email address",
+                },
+              })}
+              placeholder="you@example.com"
+              className={inputClassName}
+            />
+          </div>
+          {errors.email && (
+            <p className="mt-1.5 text-xs font-medium text-red-600">
+              {errors.email.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="register-password"
+            className="mb-2 block text-sm font-semibold text-[var(--mood-ink)]"
+          >
+            Password
+          </label>
+          <div className="relative">
+            <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--mood-muted)]" />
+            <input
+              id="register-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              aria-invalid={Boolean(errors.password)}
+              {...register("password", {
+                required: "Password is required",
+                minLength: { value: 6, message: "At least 6 characters" },
+                pattern: {
+                  value: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/,
+                  message: "Use at least one letter and one number",
+                },
+              })}
+              placeholder="At least 6 characters"
+              className={inputClassName}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-[var(--mood-muted)] hover:bg-[var(--mood-surface-soft)] hover:text-[var(--mood-ink)]"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+          {errors.password ? (
+            <p className="mt-1.5 text-xs font-medium text-red-600">
+              {errors.password.message}
+            </p>
+          ) : (
+            <p className="mt-1.5 text-xs text-[var(--mood-muted)]">
+              Include letters and numbers.
+            </p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-md bg-[var(--mood-coral)] px-4 text-sm font-bold text-white transition hover:bg-[var(--mood-coral-deep)] disabled:opacity-60"
+        >
+          {loading ? (
+            <>
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+              Creating account
+            </>
+          ) : (
+            <>
+              Create account
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-[var(--mood-muted)]">
+        Already have an account?{" "}
+        <Link
+          href="/login"
+          className="font-bold text-[var(--mood-jade)] hover:underline"
+        >
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

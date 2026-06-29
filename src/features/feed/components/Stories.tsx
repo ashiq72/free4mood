@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { getMe } from "@/lib/api/user";
 import { createStory, deleteStory, getStoryFeed, type Story } from "@/lib/api/story";
@@ -169,7 +169,7 @@ export const Stories = () => {
   };
 
   return (
-    <div className="relative mb-2 mx-2">
+    <section className="relative mb-4">
       <input
         ref={fileInputRef}
         type="file"
@@ -178,7 +178,16 @@ export const Stories = () => {
         className="hidden"
       />
 
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-xs font-bold uppercase text-[var(--mood-muted)]">
+          Moodline
+        </h2>
+        <span className="text-[11px] text-[var(--mood-muted)]">
+          Moments fade after 24 hours
+        </span>
+      </div>
+
+      <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
         <div
           onClick={(event) => {
             const target = event.target as HTMLElement;
@@ -189,65 +198,60 @@ export const Stories = () => {
             }
             fileInputRef.current?.click();
           }}
-          className="min-w-[110px] h-[200px] rounded-xl overflow-hidden bg-white dark:bg-zinc-800 shadow-sm relative group cursor-pointer hover:opacity-90 transition-opacity"
+          className="group relative h-[108px] min-w-[168px] overflow-hidden rounded-md border border-[var(--mood-line)] bg-[var(--mood-surface)] cursor-pointer"
         >
           <RemoteImage
             src={myStory?.image || myProfileImage}
-            className="h-[75%] w-full object-cover"
+            className="h-full w-full object-cover opacity-30 transition group-hover:opacity-40"
             alt="My story"
           />
 
-          <div className="absolute top-2 left-2 right-2 z-10 flex justify-between">
+          <div className="absolute left-3 top-3 z-10 flex items-center gap-2">
             <button
               type="button"
               onClick={openAddStory}
               disabled={addingStory}
               data-story-action="true"
-              className="h-7 min-w-[28px] px-2 rounded-full bg-white/85 text-xs font-semibold text-gray-700 hover:bg-white disabled:opacity-60"
+              className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--mood-ink)] text-white hover:bg-[var(--mood-coral)] disabled:opacity-60 dark:bg-white dark:text-black"
             >
-              {addingStory ? "..." : "+"}
+              {addingStory ? "..." : <Plus className="h-4 w-4" />}
             </button>
-
-            {myStory && (
-              <button
-                type="button"
-                onClick={handleRemoveStory}
-                disabled={removingStory}
-                data-story-action="true"
-                className="h-7 min-w-[28px] px-2 rounded-full bg-black/60 text-xs font-semibold text-white hover:bg-black/80 disabled:opacity-60"
-              >
-                {removingStory ? "..." : "x"}
-              </button>
-            )}
+            <div>
+              <span className="block text-xs font-bold text-[var(--mood-ink)]">
+                {createStoryLabel}
+              </span>
+              <span className="block text-[10px] text-[var(--mood-muted)]">
+                {myStory ? "Tap to view" : "Share a moment"}
+              </span>
+            </div>
           </div>
 
-          <div className="absolute bottom-0 w-full h-[25%] bg-white dark:bg-zinc-800 flex flex-col items-center justify-center">
-            <span className="text-xs font-semibold dark:text-white mt-3">
-              {createStoryLabel}
+          {myStory && (
+            <button
+              type="button"
+              onClick={handleRemoveStory}
+              disabled={removingStory}
+              data-story-action="true"
+              aria-label="Remove your story"
+              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/65 text-white hover:bg-black disabled:opacity-60"
+            >
+              {removingStory ? "..." : <X className="h-3.5 w-3.5" />}
+            </button>
+          )}
+
+          {myStory && (
+            <span className="absolute bottom-3 left-3 flex items-center gap-1 text-[10px] font-bold text-[var(--mood-jade)]">
+              <Check className="h-3 w-3" />
+              Live now
             </span>
-          </div>
-
-          <div className="absolute top-[65%] left-1/2 -translate-x-1/2 h-10 w-10 rounded-full border-4 border-white dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900">
-            <RemoteImage
-              src={myProfileImage}
-              alt="My profile"
-              className="h-full w-full object-cover"
-            />
-            <span className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-blue-600 text-white flex items-center justify-center">
-              {myStory ? (
-                <Check className="h-3 w-3" />
-              ) : (
-                <span className="text-[10px] font-bold">+</span>
-              )}
-            </span>
-          </div>
+          )}
         </div>
 
         {loading &&
           Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="min-w-[110px] h-[200px] rounded-xl bg-gray-200 dark:bg-zinc-800 animate-pulse"
+              className="h-[108px] min-w-[168px] animate-pulse rounded-md bg-[var(--mood-surface-soft)]"
             />
           ))}
 
@@ -256,15 +260,15 @@ export const Stories = () => {
             <div
               key={story.userId}
               onClick={() => setActiveStory(story)}
-              className="min-w-[110px] h-[200px] rounded-xl overflow-hidden relative cursor-pointer group"
+              className="group relative h-[108px] min-w-[168px] overflow-hidden rounded-md cursor-pointer"
             >
               <RemoteImage
                 src={story.image}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 alt={`${story.userName} story`}
               />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-              <div className="absolute top-3 left-3 w-9 h-9 rounded-full border-4 border-blue-600 overflow-hidden">
+              <div className="absolute inset-0 bg-black/35 transition-colors group-hover:bg-black/25" />
+              <div className="absolute left-3 top-3 h-8 w-8 overflow-hidden rounded-md border-2 border-[var(--mood-coral)]">
                 <RemoteImage
                   src={story.userImage || FALLBACK_USER_IMAGE}
                   className="w-full h-full object-cover"
@@ -321,14 +325,14 @@ export const Stories = () => {
             </div>
 
             {activeStory.caption && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-sm text-white">
+              <div className="absolute bottom-0 left-0 right-0 bg-black/75 p-4 text-sm text-white">
                 {activeStory.caption}
               </div>
             )}
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

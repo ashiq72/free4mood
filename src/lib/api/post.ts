@@ -222,6 +222,32 @@ export const addPostComment = async (
   return assertSuccess(data, "Failed to add comment");
 };
 
+export const togglePostCommentLike = async (
+  postId: string,
+  commentId: string,
+): Promise<ApiResponse<Post>> => {
+  const tenantId = getClientTenantId();
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+
+  const safePostId = encodeURIComponent(postId.trim());
+  const safeCommentId = encodeURIComponent(commentId.trim());
+  const data = await requestJson<ApiResponse<Post>>(
+    `${getApiUrl()}/posts/${safePostId}/comments/${safeCommentId}/toggle-like`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-tenant-id": tenantId,
+      },
+    },
+  );
+
+  return assertSuccess(data, "Failed to update comment like");
+};
+
 export const updatePost = async (
   postId: string,
   payload: { text?: string; file?: File | null },

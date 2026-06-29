@@ -21,6 +21,7 @@ import {
   getNotificationStreamUrl,
   getIncomingFriendRequests,
   getMyFriends,
+  getOutgoingFriendRequests,
   getUnreadNotificationCount,
   type FollowUser,
 } from "@/lib/api/social";
@@ -53,42 +54,42 @@ const menuItems: Array<{
     href: "/profile",
     label: "My Profile",
     icon: UserCircle2,
-    color: "text-indigo-500",
+    color: "text-[var(--mood-coral)]",
   },
   {
     key: "friends",
     href: "/friends",
     label: "Friends",
     icon: Users,
-    color: "text-blue-500",
+    color: "text-[var(--mood-jade)]",
   },
   {
     key: "requests",
     href: "/friends/requests",
     label: "Requests",
     icon: MessageCircle,
-    color: "text-emerald-500",
+    color: "text-[var(--mood-gold)]",
   },
   {
     key: "unreadNotifications",
     href: "/notifications",
     label: "Notifications",
     icon: Bell,
-    color: "text-rose-500",
+    color: "text-[var(--mood-coral)]",
   },
   {
     key: null,
     href: "/watch",
     label: "Watch",
     icon: Video,
-    color: "text-violet-500",
+    color: "text-[var(--mood-jade)]",
   },
   {
     key: null,
     href: "/settings",
     label: "Settings",
     icon: Settings,
-    color: "text-orange-500",
+    color: "text-[var(--mood-gold)]",
   },
 ];
 
@@ -110,19 +111,30 @@ export const LeftSidebar = () => {
         setLoading(true);
       }
 
-      const [meRes, friendsRes, requestRes, unreadRes, postsRes, suggestionRes] =
-        await Promise.all([
-          getMe<IUserInfo>(),
-          getMyFriends({ limit: 100 }),
-          getIncomingFriendRequests({ limit: 100 }),
-          getUnreadNotificationCount(),
-          getMyPosts({ limit: 100 }),
-          getFollowSuggestions({ limit: 4 }),
-        ]);
+      const [
+        meRes,
+        friendsRes,
+        requestRes,
+        outgoingRequestRes,
+        unreadRes,
+        postsRes,
+        suggestionRes,
+      ] = await Promise.all([
+        getMe<IUserInfo>(),
+        getMyFriends({ limit: 100 }),
+        getIncomingFriendRequests({ limit: 100 }),
+        getOutgoingFriendRequests({ limit: 100 }),
+        getUnreadNotificationCount(),
+        getMyPosts({ limit: 100 }),
+        getFollowSuggestions({ limit: 4 }),
+      ]);
 
       const meData = meRes.data || null;
       const friendRows = Array.isArray(friendsRes.data) ? friendsRes.data : [];
       const requestRows = Array.isArray(requestRes.data) ? requestRes.data : [];
+      const outgoingRequestRows = Array.isArray(outgoingRequestRes.data)
+        ? outgoingRequestRes.data
+        : [];
       const postRows = Array.isArray(postsRes.data) ? postsRes.data : [];
       const suggestionRows = Array.isArray(suggestionRes.data)
         ? suggestionRes.data
@@ -132,6 +144,14 @@ export const LeftSidebar = () => {
           .map((friend) => friend?._id)
           .filter((id): id is string => typeof id === "string" && !!id),
       );
+      const pendingUserIdSet = new Set([
+        ...requestRows
+          .map((request) => request.from?._id)
+          .filter((id): id is string => Boolean(id)),
+        ...outgoingRequestRows
+          .map((request) => request.to?._id)
+          .filter((id): id is string => Boolean(id)),
+      ]);
 
       setMe(meData);
       setCounts({
@@ -141,7 +161,11 @@ export const LeftSidebar = () => {
         posts: postRows.length,
       });
       setSuggestions(
-        suggestionRows.filter((person) => !friendIdSet.has(person._id)),
+        suggestionRows.filter(
+          (person) =>
+            !friendIdSet.has(person._id) &&
+            !pendingUserIdSet.has(person._id),
+        ),
       );
     } catch (error: unknown) {
       if (!silent) {
@@ -233,19 +257,19 @@ export const LeftSidebar = () => {
   );
 
   return (
-    <div className="space-y-5 pr-4">
+    <aside className="pr-4">
       <Link
         href="/profile"
-        className="block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/80"
+        className="block border-b border-[var(--mood-line)] pb-5 transition hover:opacity-80"
       >
         <div className="flex items-center gap-3">
           <RemoteImage
             src={getUserImage(me)}
             alt="User"
-            className="h-11 w-11 rounded-full object-cover"
+            className="h-12 w-12 rounded-md object-cover"
           />
           <div className="min-w-0">
-            <p className="truncate font-semibold text-gray-900 dark:text-white">
+            <p className="truncate font-bold text-[var(--mood-ink)]">
               {me?.name || "My Profile"}
             </p>
             <p className="truncate text-xs text-gray-500">
@@ -253,26 +277,26 @@ export const LeftSidebar = () => {
             </p>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div className="mt-4 grid grid-cols-3 divide-x divide-[var(--mood-line)]">
           <StatCell label="Posts" value={counts.posts} />
           <StatCell label="Friends" value={counts.friends} />
           <StatCell label="Alerts" value={counts.unreadNotifications} />
         </div>
       </Link>
 
-      <div className="space-y-1">
+      <nav className="mt-5 space-y-1" aria-label="Social navigation">
         {shownMenu.map((item) => (
           <Link
             key={item.label}
             href={item.href}
-            className="group flex items-center gap-3 rounded-xl p-3 transition hover:bg-gray-200 dark:hover:bg-zinc-800"
+            className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition hover:bg-[var(--mood-surface-soft)]"
           >
             <item.icon className={`h-5 w-5 ${item.color}`} />
             <span className="flex-1 text-sm font-medium text-gray-700 group-hover:text-black dark:text-gray-200 dark:group-hover:text-white">
               {item.label}
             </span>
             {item.key && counts[item.key] > 0 && (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <span className="rounded-full bg-[var(--mood-coral)] px-2 py-0.5 text-xs font-bold text-white">
                 {counts[item.key]}
               </span>
             )}
@@ -282,9 +306,9 @@ export const LeftSidebar = () => {
         <button
           type="button"
           onClick={() => setExpanded((prev) => !prev)}
-          className="flex w-full items-center gap-3 rounded-xl p-3 transition hover:bg-gray-200 dark:hover:bg-zinc-800"
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 transition hover:bg-[var(--mood-surface-soft)]"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-300 dark:bg-zinc-700">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--mood-surface-soft)]">
             <ChevronDown
               className={`h-4 w-4 text-gray-700 transition-transform dark:text-gray-300 ${
                 expanded ? "rotate-180" : ""
@@ -295,18 +319,16 @@ export const LeftSidebar = () => {
             {expanded ? "See less" : "See more"}
           </span>
         </button>
-      </div>
+      </nav>
 
-      <div className="border-b border-gray-300 dark:border-zinc-700" />
-
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="mt-6 border-t border-[var(--mood-line)] pt-5">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Discover People
+            New voices
           </h3>
           <Link
             href="/friends"
-            className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-[var(--mood-jade)] hover:underline"
           >
             <Compass className="h-3.5 w-3.5" />
             Explore
@@ -323,12 +345,12 @@ export const LeftSidebar = () => {
               <Link
                 key={person._id}
                 href={`/profile/${person._id}`}
-                className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-gray-100 dark:hover:bg-zinc-800"
+                className="flex items-center gap-3 rounded-md p-2 transition hover:bg-[var(--mood-surface-soft)]"
               >
                 <RemoteImage
                   src={getUserImage(person)}
                   alt={person.name || "User"}
-                  className="h-9 w-9 rounded-full object-cover"
+                  className="h-9 w-9 rounded-md object-cover"
                 />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-100">
@@ -342,14 +364,14 @@ export const LeftSidebar = () => {
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </aside>
   );
 };
 
 const StatCell = ({ label, value }: { label: string; value: number }) => (
-  <div className="rounded-lg bg-gray-100 px-2 py-1.5 dark:bg-zinc-800">
-    <p className="text-sm font-semibold text-gray-900 dark:text-white">{value}</p>
-    <p className="text-[11px] text-gray-500">{label}</p>
+  <div className="px-2 py-1 text-left first:pl-0 last:pr-0">
+    <p className="text-sm font-bold text-[var(--mood-ink)]">{value}</p>
+    <p className="text-[10px] font-semibold uppercase text-[var(--mood-muted)]">{label}</p>
   </div>
 );
