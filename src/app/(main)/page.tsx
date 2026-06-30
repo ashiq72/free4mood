@@ -8,12 +8,12 @@ import { Sparkles } from "lucide-react";
 export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--mood-canvas)]">
-      <div className="mx-auto grid max-w-[1540px] grid-cols-1 gap-8 px-3 pb-10 pt-6 sm:px-6 lg:grid-cols-[238px_minmax(0,720px)] xl:grid-cols-[238px_minmax(0,720px)_300px]">
-        <div className="sticky top-24 hidden h-[calc(100vh-7rem)] overflow-y-auto lg:block">
+      <div className="mx-auto grid max-w-[1420px] grid-cols-1 gap-6 px-3 pb-10 pt-6 sm:px-6 xl:grid-cols-[minmax(220px,1fr)_minmax(0,720px)_minmax(220px,1fr)]">
+        <div className="sticky top-24 hidden h-[calc(100vh-7rem)] min-w-0 overflow-y-auto xl:block">
           <LeftSidebar />
         </div>
 
-        <main className="min-w-0">
+        <main className="mx-auto w-full max-w-[720px] min-w-0 justify-self-center">
           <header className="mb-5 flex items-end justify-between border-b border-[var(--mood-line)] pb-4">
             <div>
               <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase text-[var(--mood-coral)]">
@@ -36,7 +36,7 @@ export default function Home() {
           <Feed />
         </main>
 
-        <div className="sticky top-24 hidden h-[calc(100vh-7rem)] overflow-y-auto xl:block">
+        <div className="sticky top-24 hidden h-[calc(100vh-7rem)] min-w-0 overflow-y-auto xl:block">
           <RightSidebar />
         </div>
       </div>
