@@ -5,7 +5,7 @@ import { ShieldCheck, Sparkles } from "lucide-react";
 
 type AuthShellProps = {
   children: ReactNode;
-  mode: "login" | "register";
+  mode: "login" | "register" | "verify";
 };
 
 const copy = {
@@ -20,6 +20,12 @@ const copy = {
     title: "Come as you are.",
     description:
       "Build a circle around real moments, honest thoughts, and the people who understand your mood.",
+  },
+  verify: {
+    eyebrow: "One quick check",
+    title: "Make sure it is really you.",
+    description:
+      "Verify your email to protect your account and keep your circle connected to the right person.",
   },
 };
 
@@ -75,4 +81,3 @@ export const AuthShell = ({ children, mode }: AuthShellProps) => {
     </div>
   );
 };
-

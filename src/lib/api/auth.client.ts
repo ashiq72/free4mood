@@ -18,6 +18,10 @@ export interface ChangePasswordPayload {
   confirmPassword: string;
 }
 
+type VerificationData = {
+  developmentCode?: string;
+} | null;
+
 type LoginData = {
   accessToken: string;
   [key: string]: unknown;
@@ -117,4 +121,39 @@ export const changePassword = async (
   );
 
   return assertSuccess(data, "Failed to change password");
+};
+
+export const verifyEmail = async (
+  email: string,
+  code: string,
+): Promise<ApiResponse<null>> => {
+  const data = await requestJson<ApiResponse<null>>(
+    `${getApiCoreUrl()}/auth/verify-email`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-id": getClientTenantId(),
+      },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), code }),
+    },
+  );
+  return assertSuccess(data, "Email verification failed");
+};
+
+export const resendEmailVerification = async (
+  email: string,
+): Promise<ApiResponse<VerificationData>> => {
+  const data = await requestJson<ApiResponse<VerificationData>>(
+    `${getApiCoreUrl()}/auth/resend-verification`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-id": getClientTenantId(),
+      },
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    },
+  );
+  return assertSuccess(data, "Verification code could not be resent");
 };

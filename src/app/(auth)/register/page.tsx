@@ -36,13 +36,21 @@ export default function RegisterPage() {
   const onSubmit: SubmitHandler<IFormInput> = async (data) => {
     setLoading(true);
     try {
-      await createUser({
+      const response = await createUser({
         ...data,
         name: data.name.trim(),
         email: data.email.trim().toLowerCase(),
       });
-      toast.success("Account created successfully");
-      router.push("/login");
+      if (response.data?.developmentCode) {
+        sessionStorage.setItem(
+          "free4mood_verification_code",
+          response.data.developmentCode,
+        );
+      }
+      toast.success("Check your email for the verification code");
+      router.push(
+        `/verify-email?email=${encodeURIComponent(data.email.trim().toLowerCase())}`,
+      );
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Something went wrong";

@@ -4,12 +4,18 @@ import { getClientTenantId } from "./session";
 import type { ApiResponse } from "./types";
 import type { IFormInput } from "@/features/auth/types";
 
+export type CreateUserData = {
+  verificationRequired?: boolean;
+  delivered?: boolean;
+  developmentCode?: string;
+};
+
 export async function createUser(
   payload: IFormInput
-): Promise<ApiResponse<unknown>> {
+): Promise<ApiResponse<CreateUserData>> {
   const tenantId =
     typeof window === "undefined" ? getTenantIdFallback() : getClientTenantId();
-  const data = await requestJson<ApiResponse<unknown>>(
+  const data = await requestJson<ApiResponse<CreateUserData>>(
     `${getApiCoreUrl()}/users/create-user`,
     {
       method: "POST",

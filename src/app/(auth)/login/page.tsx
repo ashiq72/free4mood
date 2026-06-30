@@ -55,6 +55,11 @@ export default function LoginPage() {
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Something went wrong";
+      if (message.toLowerCase().includes("verify your email")) {
+        router.push(
+          `/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`,
+        );
+      }
       toast.error(message);
     } finally {
       setLoading(false);
@@ -193,4 +198,3 @@ export default function LoginPage() {
     </AuthShell>
   );
 }
-
